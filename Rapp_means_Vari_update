@@ -27,7 +27,8 @@ nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\prova_north_face.csv'
 
 # Inserire la path con il nome del file.xlsx
 workbook = xlsxwriter.Workbook('D:\RAPPORTO_MENSILE\RAPP_mensile\prova_dicembre_xcel.xlsx')
-nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx'
+#nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx'
+nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Copia_1.xlsx'
 
 # Inserire il nome utente desiderato
 Variabile_utente = 'North Face LAVEGGIO 5'
@@ -100,7 +101,43 @@ print("Metering Code dell'utente:",code_1)
 
 # Prendo il mese e l'anno
 mese_1 = df_utente.iloc[8]                                  # Variabile per identificare il mese
-print("Mese:",mese_1)
+if Variabile_mese == 1:
+    mese_nom = "Gennaio"
+    print("Mese:",mese_nom)
+elif Variabile_mese == 2:
+    mese_nom = "Febbraio"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 3:
+    mese_nom = "Marzo"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 4:
+    mese_nom = "Aprile"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 5:
+    mese_nom = "Maggio"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 6:
+    mese_nom = "Giugno"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 7:
+    mese_nom = "Luglio"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 8:
+    mese_nom = "Agosto"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 9:
+    mese_nom = "Settembre"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 10:
+    mese_nom = "Ottobre"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 11:
+    mese_nom = "Novembre"
+    print("Mese:", mese_nom)
+elif Variabile_mese == 12:
+    mese_nom = "Dicembre"
+    print("Mese:", mese_nom)
+
 anno_1 = df_utente.iloc[7]                                  # Variabile per identificare l'anno
 print("Anno:",anno_1)
 
@@ -113,7 +150,7 @@ df_tab_utente = pd.DataFrame([df_utente.iloc[0],
                               "",
                               "",
                               "",
-                              df_utente.iloc[8],
+                              mese_nom,
                               df_utente.iloc[7]],
                              index=['Nome', 'Abbonato',"", 'Mettering Code',"",'Fattore',
                                     "","","",'Mese','Anno'],
@@ -452,12 +489,11 @@ if not df_0_off_re.empty:
 workbook.close()                            # Termino il lavoro su excel (sempre alla fine)
 
 # Secondo metodo di scrittura su Excel
-writer_1 = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx") # in sez. Utente
 
 # Dati per il foglio 1 in Excel
 df_tab_utente.to_excel(writer_a,
-                       sheet_name='Dati Cliente',
-                       startrow=6,
+                       sheet_name='Dati cliente',
+                       startrow=5,
                        startcol=3,
                        index=False)
 
