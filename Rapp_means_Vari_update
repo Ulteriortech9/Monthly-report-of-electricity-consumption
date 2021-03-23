@@ -16,6 +16,7 @@
 
 import pandas as pd
 import xlsxwriter
+import numpy as np
 from openpyxl import load_workbook
 from pandas import ExcelWriter
 
@@ -178,7 +179,8 @@ df_peak = df_peak_orari_peak[(df_peak_orari_peak['Tempo'].dt.dayofweek==0)  # 0 
                       | (df_peak_orari_peak['Tempo'].dt.dayofweek==4)]      # 4 = venerdì
 
 df_peak_0 = df_peak.loc[(df_peak["Valore"]!='0')
-                        & (df_peak["Energia A+/- R+/-"]=="A+")]         # Tabella senza 0 & Energia = A-
+                        & (df_peak["Energia A+/- R+/-"]=="A+")
+                        & (df_peak["Indice"]==0)]             # Tabella senza 0 & Energia = A+
 
 df_peak_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
 df_0 = df_peak_0
@@ -279,7 +281,8 @@ if not df_0_off.empty:
 
 # Prendo in esame la potenza reattiva di peak (dal lunedì al venerdì, dalle 08:00 alle 20:00)
 df_peak_re = df_peak.loc[(df_peak["Valore"]!='0')
-                        & (df_peak["Energia A+/- R+/-"]=="R+")]         # Tabella senza 0 & Energia = R+
+                         & (df_peak["Energia A+/- R+/-"]=="R+")
+                         & (df_peak["Indice"]==0)]         # Tabella senza 0 & Energia = R+
 
 df_peak_re['Valore'].astype(str).astype(float, errors='ignore')         # Necessario per la somma
 df_0_re = df_peak_re
@@ -301,7 +304,8 @@ if not df_0_re.empty:
 
 # Prendo in esame la potenza reattiva di off peak (fuori dal lunedì al venerdì, dalle 08:00 alle 20:00)
 df_off_peak_re = df_peak_orari_off.loc[(df_peak_orari_off["Valore"]!='0')
-                                      & (df_peak_orari_off["Energia A+/- R+/-"]=="R+")]  # Tabella senza 0
+                                       & (df_peak_orari_off["Energia A+/- R+/-"]=="R+")
+                                       & (df_peak_orari_off["Indice"]==0)]  # Tabella senza 0
 
 df_off_peak_re['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
 df_0_off_re = df_off_peak_re
@@ -344,7 +348,8 @@ print("-----------------------------------------------------------")
 
 # Creo la tabella con l'energia attiva (A+)
 df_tab = df_sez_utente.loc[(df_sez_utente["Valore"]!='0')
-                        & (df_sez_utente["Energia A+/- R+/-"]=="A+")]
+                        & (df_sez_utente["Energia A+/- R+/-"]=="A+")
+                        & (df_sez_utente["Indice"]==0)]
 
 if not df_tab.empty:
     df_tab = df_tab[['Nome Stazione','Energia A+/- R+/-','Valore','Tempo']]
@@ -383,7 +388,8 @@ else:
 
 # Creo la tabella con l'energia reattiva (R+)
 df_tab_re = df_sez_utente.loc[(df_sez_utente["Valore"]!='0')
-                              & (df_sez_utente["Energia A+/- R+/-"]=="R+")]
+                              & (df_sez_utente["Energia A+/- R+/-"]=="R+")
+                              & (df_sez_utente["Indice"]==0)]
 
 if not df_tab_re.empty:
     df_tab_re = df_tab_re[['Nome Stazione','Energia A+/- R+/-','Valore','Tempo']]
@@ -556,6 +562,7 @@ if not df_0.empty:
                               index=False, header=False)
 
 if not df_0_re.empty:
+
     df_tab_sommario_reattiva.to_excel(writer_a,
                                       sheet_name='Sommario mensile',
                                       startrow=16,
@@ -564,10 +571,20 @@ if not df_0_re.empty:
                                       header=False)
 
 # Dati per il foglio 3 in Excel
+df_refil = pd.DataFrame(np.zeros((31,24)))  # Tabella di 0 che pulisce le tabelle A+ e R+
+
 if not df_tab.empty:
+    df_refil.to_excel(writer_a,
+                      sheet_name='Tabella oraria A+',
+                      startrow=2)
+
     df_sum_tab.to_excel(writer_a,
                         sheet_name='Tabella oraria A+',
                         startrow=2)
+
+    df_refil.to_excel(writer_a,
+                      sheet_name='Tabella oraria R+',
+                      startrow=2)
 
     df_sum_tab_Re.to_excel(writer_a,
                            sheet_name='Tabella oraria R+',
@@ -575,8 +592,20 @@ if not df_tab.empty:
 
 # Dati per il foglio 4 in Excel
 if not df_tab_re.empty:
-    df_sum_tab_Re.to_excel(writer_a,
-                        sheet_name='Tabella oraria R+',
+    df_refil.to_excel(writer_a,
+                      sheet_name='Tabella oraria A+',
+                      startrow=2)
+
+    df_sum_tab.to_excel(writer_a,
+                        sheet_name='Tabella oraria A+',
                         startrow=2)
+
+    df_refil.to_excel(writer_a,
+                      sheet_name='Tabella oraria R+',
+                      startrow=2)
+
+    df_sum_tab_Re.to_excel(writer_a,
+                           sheet_name='Tabella oraria R+',
+                           startrow=2)
 
 writer_a.save()
