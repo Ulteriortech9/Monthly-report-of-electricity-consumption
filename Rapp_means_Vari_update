@@ -190,6 +190,10 @@ df_peak = df_peak_orari_peak[(df_peak_orari_peak['Tempo'].dt.dayofweek == 0)    
                              | (df_peak_orari_peak['Tempo'].dt.dayofweek == 3)
                              | (df_peak_orari_peak['Tempo'].dt.dayofweek == 4)]     # 4 = venerdì
 
+writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
+df_peak.to_excel(writer, 'Sheet1')
+writer.save()
+
 df_peak_0 = df_peak.loc[(df_peak["Valore"] != '0')
                         & (df_peak["Energia A+/- R+/-"] == "A+")
                         & (df_peak["Indice"] == 0)]                     # Tabella senza 0 & Energia = A+
@@ -210,7 +214,7 @@ if not df_0.empty:
 
     print("Potenza attiva massima di peak:", p_max, "kW", "in data:", data_p_max_1)
 
-# Prendo in esame la potenza attiva di off peak (fuori dal lunedì al venerdì, dalle 08:00 alle 20:00)
+# Prendo in esame la potenza attiva di off peak (dalle 20:15 alle 08:00 tutti i giorni)
 df_peak_orari_off = df_sez_utente.between_time('20:15', '08:00')
 df_peak_orari_off.index = pd.to_datetime(df_peak_orari_off.index)
 
@@ -219,6 +223,10 @@ df_off_peak_0 = df_peak_orari_off.loc[(df_peak_orari_off["Valore"] != '0')
                                       & (df_peak_orari_off["Indice"] == 0)]
 df_off_peak_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
 df_0_off = df_off_peak_0
+
+# Prendo in esame la potenza attiva di off peak durante la settimana (dalle 20:15 alle 08:00 lun/ven)
+df_week_peak_off = df_sez_utente.between_time('20:15', '08:00')
+df_week_peak_off.index = pd.to_datetime(df_week_peak_off.index)
 
 if not df_0_off.empty:
     df_off_peak_0 = pd.to_numeric(df_off_peak_0['Valore'], errors='coerce')     # Per somma Energia
@@ -234,6 +242,67 @@ if not df_0_off.empty:
 
     print("Potenza attiva massima di off peak:", p_max_off, "kW", "in data:", data_p_max_1_off)
 
+# Tabella oraria con valori di off-peak per la settimana
+df_peak_week = df_week_peak_off[(df_week_peak_off['Tempo'].dt.dayofweek == 0)       # 1 = lunedì
+                                | (df_week_peak_off['Tempo'].dt.dayofweek == 1)
+                                | (df_week_peak_off['Tempo'].dt.dayofweek == 2)
+                                | (df_week_peak_off['Tempo'].dt.dayofweek == 3)
+                                | (df_week_peak_off['Tempo'].dt.dayofweek == 4)]     # 4 = venerdì
+
+df_peak_week_0 = df_peak_week.loc[(df_peak_week["Valore"] != '0')
+                                  & (df_peak_week["Energia A+/- R+/-"] == "A+")
+                                  & (df_peak_week["Indice"] == 0)]
+df_peak_week_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
+df_0_week_off = df_peak_week_0
+
+if not df_0_week_off.empty:
+    df_peak_week_0 = pd.to_numeric(df_peak_week_0['Valore'], errors='coerce')     # Per somma Energia
+    df_peak_week_0.index = pd.to_datetime(df_peak_week_0.index, errors='ignore')
+
+    df_0_week_off.reset_index(level=0, inplace=True)
+    df_0_week_off = df_0_week_off[['Data e Ora', 'Nome Stazione', 'Energia A+/- R+/-', 'Valore']]
+    df_0_week_off['Data e Ora'] = pd.to_datetime(df_0_week_off['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
+
+    p_max_off_week = df_0_week_off['Valore'].max()
+    data_p_max_off_week = df_0_week_off.loc[df_0_week_off['Valore'] == df_0_week_off['Valore'].max(), 'Data e Ora']
+    data_p_max_1_off_week = data_p_max_off_week.iloc[0]
+
+    print("Potenza attiva massima di off peak settimanale:", p_max_off_week, "kW", "in data:", data_p_max_1_off_week)
+
+# Prendo in esame la potenza attiva di off peak durante i weekend
+df_end_peak_off = df_sez_utente
+df_end_peak_off.index = pd.to_datetime(df_end_peak_off.index)
+
+# Tabella oraria con valori di off-peak per la settimana
+df_peak_weekend = df_end_peak_off[(df_end_peak_off['Tempo'].dt.dayofweek == 5)      # 5 = sabato
+                                  | (df_end_peak_off['Tempo'].dt.dayofweek == 6)]   # 6 = domenica
+
+df_peak_weekend_0 = df_peak_weekend.loc[(df_peak_weekend["Valore"] != '0')
+                                     & (df_peak_weekend["Energia A+/- R+/-"] == "A+")
+                                     & (df_peak_weekend["Indice"] == 0)]
+df_peak_weekend_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
+df_0_weekend_off = df_peak_weekend_0
+
+if not df_0_weekend_off.empty:
+    df_peak_weekend_0 = pd.to_numeric(df_peak_weekend_0['Valore'], errors='coerce')     # Per somma Energia
+    df_peak_weekend_0.index = pd.to_datetime(df_peak_weekend_0.index, errors='ignore')
+
+    df_0_weekend_off.reset_index(level=0, inplace=True)
+    df_0_weekend_off = df_0_weekend_off[['Data e Ora', 'Nome Stazione', 'Energia A+/- R+/-', 'Valore']]
+    df_0_weekend_off['Data e Ora'] = pd.to_datetime(df_0_weekend_off['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
+
+    p_max_off_weekend = df_0_weekend_off['Valore'].max()
+    data_p_max_off_weekend = df_0_weekend_off.loc[df_0_weekend_off['Valore'] == df_0_weekend_off['Valore'].max(), 'Data e Ora']
+    data_p_max_1_off_weekend = data_p_max_off_weekend.iloc[0]
+
+    print("Potenza attiva massima di off peak weekend:", p_max_off_weekend, "kW", "in data:", data_p_max_1_off_weekend)
+
+# Determino il valore di potenza maggiore di off peak tra la settimana ed il weekend
+    if p_max_off_week > p_max_off_weekend:
+        p_max_off = p_max_off_week
+    else:
+        p_max_off = p_max_off_weekend
+
 # Determino il valore di potenza maggiore fra il valore di peak e di off peak
     if p_max > p_max_off:
         p_max_mens = p_max
@@ -248,8 +317,8 @@ if not df_0_off.empty:
     energia_peak = (df_peak_0_sum.sum())                # * df_peak_0_sum.count()
 
     # Calcolo dell'energia di off peak
-    df_off_0_sum = df_off_peak_0.resample('1H').sum()
-    energia_offpeak = (df_off_0_sum.sum())         # * df_off_0_sum.count()
+    #df_off_0_sum = df_off_peak_0.resample('1H').sum()
+    energia_offpeak = df_peak_week_0.sum() + df_peak_weekend_0.sum()         # * df_off_0_sum.count()
 
     en_tot_mens = energia_peak + energia_offpeak
 
