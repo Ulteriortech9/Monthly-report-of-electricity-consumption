@@ -24,18 +24,18 @@ from pandas import ExcelWriter
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\prova_north_face.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\prova_cebi_ottobre.csv'
 
 # Inserire la path con il nome del file.xlsx
 workbook = xlsxwriter.Workbook('D:\RAPPORTO_MENSILE\RAPP_mensile\prova_dicembre_xcel.xlsx')
-#nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx'
+# nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx'
 nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Copia_1.xlsx'
 
 # Inserire il nome utente desiderato
-Variabile_utente = 'North Face LAVEGGIO 5'
+Variabile_utente = 'Cebi MS'
 
 # Inserire il mese desiderato
-Variabile_mese = 12
+Variabile_mese = 10
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI CSV -> PANDAS
@@ -52,59 +52,71 @@ df = pd.read_csv(nome_csv,
                         'Energia A+/- R+/-',
                         'Valore',
                         'Dimensione kW/kVar',
-                        'Indice'])
+                        'Indice',
+                        'Fattore',
+                        'Abbonato'])
 
 # -----------------------------------------------------------
 # ELABORAZIONE DATI PER FOGLIO 1 EXCEL
 
 # Trasforma la data in formato leggibile dal programma
 df["Data e Ora"] = pd.to_datetime(df["Data e Ora"],
-                                dayfirst=True)
+                                  dayfirst=True)
 
 df['Anno'] = df['Data e Ora'].dt.year
 df['Mese'] = df['Data e Ora'].dt.month
 df['Giorno'] = df['Data e Ora'].dt.day
 df['Orario'] = [d.time() for d in df['Data e Ora']]
 
-#df['Valore'] = df['Valore'].str.replace(',','.')
+# df['Valore'] = df['Valore'].str.replace(',','.')
 
+# Verifica della formazione del file (da eliminare a lavoro completo)
 print(df['Valore'].dtype)
 writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
 df.to_excel(writer, 'Sheet1')
 writer.save()
 
-# Writer giusto da modificare
+# Codice necessario alla stesura del rapporto
 book = load_workbook(nome_excel)
-writer_a= pd.ExcelWriter(nome_excel,
-                         engine='openpyxl')
+writer_a = pd.ExcelWriter(nome_excel,
+                          engine='openpyxl')
 writer_a.book = book
 writer_a.sheets = dict((ws.title, ws) for ws in book.worksheets)
 
 # Prendo in esame l'utente selezionato
-df_sez_utente = df[(df["Nome Stazione"]==Variabile_utente)
-                   & (df["Mese"]==Variabile_mese)]
+df_sez_utente = df[(df["Nome Stazione"] == Variabile_utente)
+                   & (df["Mese"] == Variabile_mese)]
+df_sez_utente['Valore'] = df_sez_utente['Valore'] / df_sez_utente['Fattore']
 print(df_sez_utente)
 print()
 
 df_utente = df_sez_utente.loc[df_sez_utente['Nome Stazione']
-                              ==Variabile_utente].iloc[0]   # Estraggo i dati dell'utente selez.
+                              == Variabile_utente].iloc[0]   # Estraggo i dati dell'utente selez.
 print(df_utente)
 print()
 
 print("-----------------------------------------------------------")
 # Prendo il nome utente
 nome_1 = df_utente.iloc[0]                                  # Variabile per identificare il nome utente
-print("Nome utente selezionato:",nome_1)
+print("Nome utente selezionato:", nome_1)
 
 # Prendo il Metering Code
 code_1 = df_utente.iloc[1]                                  # Variabile per identificare il Metering Code
-print("Metering Code dell'utente:",code_1)
+print("Metering Code dell'utente:", code_1)
+
+# Prendo il Fattore
+fattore_1 = df_utente.iloc[7]                               # Variabile per identificare il fattore
+print("Fattore di potenza:", fattore_1)
+
+# Prendo il numero abbonato
+abbonato_1 = df_utente.iloc[8]                              # Variabile per identificare il nbr. abbonato
+print("Numero abbonato:", abbonato_1)
 
 # Prendo il mese e l'anno
-mese_1 = df_utente.iloc[8]                                  # Variabile per identificare il mese
+mese_1 = df_utente.iloc[10]                                 # Variabile per identificare il mese
 if Variabile_mese == 1:
     mese_nom = "Gennaio"
-    print("Mese:",mese_nom)
+    print("Mese:", mese_nom)
 elif Variabile_mese == 2:
     mese_nom = "Febbraio"
     print("Mese:", mese_nom)
@@ -139,22 +151,22 @@ elif Variabile_mese == 12:
     mese_nom = "Dicembre"
     print("Mese:", mese_nom)
 
-anno_1 = df_utente.iloc[7]                                  # Variabile per identificare l'anno
-print("Anno:",anno_1)
+anno_1 = df_utente.iloc[9]                                  # Variabile per identificare l'anno
+print("Anno:", anno_1)
 
 df_tab_utente = pd.DataFrame([df_utente.iloc[0],
-                              "Abbonato",
+                              abbonato_1,
                               "",
                               df_utente.iloc[1],
                               "",
-                              "Fattore",
+                              fattore_1,
                               "",
                               "",
                               "",
                               mese_nom,
-                              df_utente.iloc[7]],
-                             index=['Nome', 'Abbonato',"", 'Mettering Code',"",'Fattore',
-                                    "","","",'Mese','Anno'],
+                              df_utente.iloc[9]],
+                             index=['Nome', 'Abbonato', "", 'Mettering Code', "", 'Fattore',
+                                    "", "", "", 'Mese', 'Anno'],
                              columns=[""])
 print(df_tab_utente)
 
@@ -168,43 +180,44 @@ df_sez_utente = df_sez_utente.set_index('Data e Ora')
 df_sez_utente['Tempo'] = df_sez_utente.index
 
 # Prendo in esame la potenza attiva di peak (dal lunedì al venerdì, dalle 08:00 alle 20:00)
-df_peak_orari_peak = df_sez_utente.between_time('08:15','20:00')
+df_peak_orari_peak = df_sez_utente.between_time('08:15', '20:00')
 df_peak_orari_peak.index = pd.to_datetime(df_peak_orari_peak.index)
 
 # Tabella oraria con valori di peak
-df_peak = df_peak_orari_peak[(df_peak_orari_peak['Tempo'].dt.dayofweek==0)  # 0 = lunedì
-                      | (df_peak_orari_peak['Tempo'].dt.dayofweek==1)       # 1 = martedì
-                      | (df_peak_orari_peak['Tempo'].dt.dayofweek==2)       # 2 = mercoledì
-                      | (df_peak_orari_peak['Tempo'].dt.dayofweek==3)       # 3 = giovedì
-                      | (df_peak_orari_peak['Tempo'].dt.dayofweek==4)]      # 4 = venerdì
+df_peak = df_peak_orari_peak[(df_peak_orari_peak['Tempo'].dt.dayofweek == 0)        # 0 = lunedì
+                             | (df_peak_orari_peak['Tempo'].dt.dayofweek == 1)
+                             | (df_peak_orari_peak['Tempo'].dt.dayofweek == 2)
+                             | (df_peak_orari_peak['Tempo'].dt.dayofweek == 3)
+                             | (df_peak_orari_peak['Tempo'].dt.dayofweek == 4)]      # 4 = venerdì
 
-df_peak_0 = df_peak.loc[(df_peak["Valore"]!='0')
-                        & (df_peak["Energia A+/- R+/-"]=="A+")
-                        & (df_peak["Indice"]==0)]             # Tabella senza 0 & Energia = A+
+df_peak_0 = df_peak.loc[(df_peak["Valore"] != '0')
+                        & (df_peak["Energia A+/- R+/-"] == "A+")
+                        & (df_peak["Indice"] == 0)]                       # Tabella senza 0 & Energia = A+
 
 df_peak_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
 df_0 = df_peak_0
 
 if not df_0.empty:
-    df_peak_0 = pd.to_numeric(df_peak_0['Valore'], errors='coerce')         # Per somma Energia
+    df_peak_0 = pd.to_numeric(df_peak_0['Valore'], errors='coerce')     # Per somma Energia
     df_peak_0.index = pd.to_datetime(df_peak_0.index, errors='ignore')
 
     df_0.reset_index(level=0, inplace=True)
-    df_0 = df_0[['Data e Ora','Nome Stazione','Energia A+/- R+/-','Valore']]
+    df_0 = df_0[['Data e Ora', 'Nome Stazione', 'Energia A+/- R+/-', 'Valore']]
     df_0['Data e Ora'] = pd.to_datetime(df_0['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
 
     p_max = df_0['Valore'].max()
-    data_p_max = df_0.loc[df_0['Valore']==df_0['Valore'].max(),'Data e Ora']
+    data_p_max = df_0.loc[df_0['Valore'] == df_0['Valore'].max(), 'Data e Ora']
     data_p_max_1 = data_p_max.iloc[0]
 
-    print("Potenza attiva massima di peak:",p_max,"kW","in data:",data_p_max_1)
+    print("Potenza attiva massima di peak:", p_max, "kW", "in data:", data_p_max_1)
 
 # Prendo in esame la potenza attiva di off peak (fuori dal lunedì al venerdì, dalle 08:00 alle 20:00)
-df_peak_orari_off = df_sez_utente.between_time('20:15','08:00')
+df_peak_orari_off = df_sez_utente.between_time('20:15', '08:00')
 df_peak_orari_off.index = pd.to_datetime(df_peak_orari_off.index)
 
-df_off_peak_0 = df_peak_orari_off.loc[(df_peak_orari_off["Valore"]!='0')
-                                      & (df_peak_orari_off["Energia A+/- R+/-"]=="A+")]  # Tabella senza 0
+df_off_peak_0 = df_peak_orari_off.loc[(df_peak_orari_off["Valore"] != '0')
+                                      & (df_peak_orari_off["Energia A+/- R+/-"] == "A+")
+                                      & (df_peak_orari_off["Indice"] == 0)]  # Tabella senza 0
 df_off_peak_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
 df_0_off = df_off_peak_0
 
@@ -213,19 +226,19 @@ if not df_0_off.empty:
     df_off_peak_0.index = pd.to_datetime(df_off_peak_0.index, errors='ignore')
 
     df_0_off.reset_index(level=0, inplace=True)
-    df_0_off = df_0_off[['Data e Ora','Nome Stazione','Energia A+/- R+/-','Valore']]
+    df_0_off = df_0_off[['Data e Ora', 'Nome Stazione', 'Energia A+/- R+/-', 'Valore']]
     df_0_off['Data e Ora'] = pd.to_datetime(df_0_off['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
 
     p_max_off = df_0_off['Valore'].max()
-    data_p_max_off = df_0_off.loc[df_0_off['Valore']==df_0_off['Valore'].max(),'Data e Ora']
+    data_p_max_off = df_0_off.loc[df_0_off['Valore'] == df_0_off['Valore'].max(), 'Data e Ora']
     data_p_max_1_off = data_p_max_off.iloc[0]
 
-    print("Potenza attiva massima di off peak:",p_max_off,"kW","in data:",data_p_max_1_off)
+    print("Potenza attiva massima di off peak:", p_max_off, "kW", "in data:", data_p_max_1_off)
 
 # Determino il valore di potenza maggiore fra il valore di peak e di off peak
     if p_max > p_max_off:
         p_max_mens = p_max
-        print("Potenza attiva massima mensile = ",p_max, "kW")
+        print("Potenza attiva massima mensile = ", p_max, "kW")
     else:
         p_max_mens = p_max_off
         print("Potenza attiva massima mensile = ", p_max_off, "kW")
@@ -234,12 +247,12 @@ if not df_0_off.empty:
     # Calcolo dell'energia di peak
     df_peak_0_sum = df_peak_0.resample('1H').sum()
     df_peak_0_sum = df_peak_0_sum[df_peak_0_sum != 0]
-    energia_peak = (df_peak_0.sum() / 4)                #* df_peak_0_sum.count()
+    energia_peak = (df_peak_0_sum.sum())                # * df_peak_0_sum.count()
 
     # Calcolo dell'energia di off peak
     df_off_0_sum = df_off_peak_0.resample('1H').sum()
     df_off_0_sum = df_off_0_sum[df_off_0_sum != 0]
-    energia_offpeak = (df_off_peak_0.sum() / 4)         #* df_off_0_sum.count()
+    energia_offpeak = (df_off_0_sum.sum())         # * df_off_0_sum.count()
 
     en_tot_mens = energia_peak + energia_offpeak
 
@@ -249,40 +262,40 @@ if not df_0_off.empty:
     print("Energia totale mensile:", en_tot_mens, "kWh")
 
     data_sommario_attiva = {'a': [en_tot_mens,
-                           energia_peak,
-                           energia_offpeak,
-                           "", "", "", "",
-                           p_max_mens,
-                           p_max, p_max_off,
-                           "","","","",
-                           0,0,0],
-                     'b': ['kWh',
-                           'kWh',
-                           'kWh',
-                           "","","","",
-                           'kW',
-                           'kW',
-                           'kW',
-                           "","","","",
-                           'kVar','kVar','kVar'],
-                     'c': ["","","","","","","",
-                           'data',
-                           data_p_max_1,
-                           data_p_max_1_off,
-                           "","","","","","",""]}
+                                  energia_peak,
+                                  energia_offpeak,
+                                  "", "", "", "",
+                                  p_max_mens,
+                                  p_max, p_max_off,
+                                  "", "", "", "",
+                                  0, 0, 0],
+                            'b': ['kWh',
+                                  'kWh',
+                                  'kWh',
+                                  "", "", "", "",
+                                  'kW',
+                                  'kW',
+                                  'kW',
+                                  "", "", "", "",
+                                  'kVar', 'kVar', 'kVar'],
+                            'c': ["", "", "", "", "", "", "",
+                                  'data',
+                                  data_p_max_1,
+                                  data_p_max_1_off,
+                                  "", "", "", "", "", "", ""]}
     df_tab_sommario_attiva = pd.DataFrame(data_sommario_attiva)
 
     data_riassunto = {'a': [en_tot_mens],
-                    'b': [p_max_mens]}
+                      'b': [p_max_mens]}
     df_tab_riass = pd.DataFrame(data_riassunto)
 
 # -----------------------------------------------------------
 # ELABORAZIONE DATI PER FOGLIO 2 EXCEL (Potenza reattiva R+)
 
 # Prendo in esame la potenza reattiva di peak (dal lunedì al venerdì, dalle 08:00 alle 20:00)
-df_peak_re = df_peak.loc[(df_peak["Valore"]!='0')
-                         & (df_peak["Energia A+/- R+/-"]=="R+")
-                         & (df_peak["Indice"]==0)]         # Tabella senza 0 & Energia = R+
+df_peak_re = df_peak.loc[(df_peak["Valore"] != '0')
+                         & (df_peak["Energia A+/- R+/-"] == "R+")
+                         & (df_peak["Indice"] == 0)]         # Tabella senza 0 & Energia = R+
 
 df_peak_re['Valore'].astype(str).astype(float, errors='ignore')         # Necessario per la somma
 df_0_re = df_peak_re
@@ -292,20 +305,20 @@ if not df_0_re.empty:
     df_peak_re.index = pd.to_datetime(df_peak_re.index, errors='ignore')
 
     df_0_re.reset_index(level=0, inplace=True)
-    df_0_re = df_0_re[['Data e Ora','Nome Stazione','Energia A+/- R+/-','Valore']]
+    df_0_re = df_0_re[['Data e Ora', 'Nome Stazione', 'Energia A+/- R+/-', 'Valore']]
     df_0_re['Data e Ora'] = pd.to_datetime(df_0_re['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
 
     q_max = df_0_re['Valore'].max()
-    data_q_max = df_0_re.loc[df_0_re['Valore']==df_0_re['Valore'].max(),'Data e Ora']
+    data_q_max = df_0_re.loc[df_0_re['Valore'] == df_0_re['Valore'].max(), 'Data e Ora']
     data_q_max_1 = data_q_max.iloc[0]
 
     print("")
-    print("Potenza reattiva massima di peak:",q_max,"kVar","in data:",data_q_max_1)
+    print("Potenza reattiva massima di peak:", q_max, "kVar", "in data:", data_q_max_1)
 
 # Prendo in esame la potenza reattiva di off peak (fuori dal lunedì al venerdì, dalle 08:00 alle 20:00)
-df_off_peak_re = df_peak_orari_off.loc[(df_peak_orari_off["Valore"]!='0')
-                                       & (df_peak_orari_off["Energia A+/- R+/-"]=="R+")
-                                       & (df_peak_orari_off["Indice"]==0)]  # Tabella senza 0
+df_off_peak_re = df_peak_orari_off.loc[(df_peak_orari_off["Valore"] != '0')
+                                       & (df_peak_orari_off["Energia A+/- R+/-"] == "R+")
+                                       & (df_peak_orari_off["Indice"] == 0)]  # Tabella senza 0
 
 df_off_peak_re['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
 df_0_off_re = df_off_peak_re
@@ -315,29 +328,29 @@ if not df_0_off_re.empty:
     df_off_peak_re.index = pd.to_datetime(df_off_peak_re.index, errors='ignore')
 
     df_0_off_re.reset_index(level=0, inplace=True)
-    df_0_off_re = df_0_off_re[['Data e Ora','Nome Stazione','Energia A+/- R+/-','Valore']]
+    df_0_off_re = df_0_off_re[['Data e Ora', 'Nome Stazione', 'Energia A+/- R+/-', 'Valore']]
     df_0_off_re['Data e Ora'] = pd.to_datetime(df_0_off_re['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
 
     q_max_off = df_0_off_re['Valore'].max()
-    data_q_max_off = df_0_off_re.loc[df_0_off_re['Valore']==df_0_off_re['Valore'].max(),'Data e Ora']
+    data_q_max_off = df_0_off_re.loc[df_0_off_re['Valore'] == df_0_off_re['Valore'].max(), 'Data e Ora']
     data_q_max_1_off = data_q_max_off.iloc[0]
 
-    print("Potenza reattiva massima di off peak:",q_max_off,"kVar","in data:",data_q_max_1_off)
+    print("Potenza reattiva massima di off peak:", q_max_off, "kVar", "in data:", data_q_max_1_off)
 
 # Determino il valore di potenza reattiva maggiore fra il valore di peak e di off peak
     if q_max > q_max_off:
         q_max_mens = q_max
-        print("Potenza reattiva massima mensile = ",q_max, "kVar")
+        print("Potenza reattiva massima mensile = ", q_max, "kVar")
     else:
         q_max_mens = q_max_off
         print("Potenza reattiva massima mensile = ", q_max_off, "kVar")
 
     data_sommario_reattiva = {'a': [q_max_mens,
-                                  q_max,
-                                  q_max_off],
+                                    q_max,
+                                    q_max_off],
                               'b': ['kVar',
-                                  'kVar',
-                                  'kVar']}
+                                    'kVar',
+                                    'kVar']}
     df_tab_sommario_reattiva = pd.DataFrame(data_sommario_reattiva)
 
 print()
@@ -347,20 +360,20 @@ print("-----------------------------------------------------------")
 # ELABORAZIONE DATI PER FOGLIO 3 EXCEL
 
 # Creo la tabella con l'energia attiva (A+)
-df_tab = df_sez_utente.loc[(df_sez_utente["Valore"]!='0')
-                        & (df_sez_utente["Energia A+/- R+/-"]=="A+")
-                        & (df_sez_utente["Indice"]==0)]
+df_tab = df_sez_utente.loc[(df_sez_utente["Valore"] != '0')
+                           & (df_sez_utente["Energia A+/- R+/-"] == "A+")
+                           & (df_sez_utente["Indice"] == 0)]
 
 if not df_tab.empty:
-    df_tab = df_tab[['Nome Stazione','Energia A+/- R+/-','Valore','Tempo']]
+    df_tab = df_tab[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
     df_tab['Valore'] = pd.to_numeric(df_tab['Valore'], errors='coerce')
 
     df_sum = df_tab.resample('1H').sum()
     df_sum['Data'] = [d.date() for d in df_sum.index]
     df_sum['Time'] = [d.time() for d in df_sum.index]
     df_sum['Data'] = pd.to_datetime(df_sum['Data']).dt.strftime('%d.%m.%Y')
-    df_sum.reset_index(inplace= True)
-    df_sum_tab = df_sum.groupby([df_sum['Data'],'Time'])['Valore'].sum().unstack()
+    df_sum.reset_index(inplace=True)
+    df_sum_tab = df_sum.groupby([df_sum['Data'], 'Time'])['Valore'].sum().unstack()
 
     print("Tabella oraria potenza attiva:")
     print(df_sum_tab)
@@ -387,20 +400,20 @@ else:
 # ELABORAZIONE DATI PER FOGLIO 4 EXCEL
 
 # Creo la tabella con l'energia reattiva (R+)
-df_tab_re = df_sez_utente.loc[(df_sez_utente["Valore"]!='0')
-                              & (df_sez_utente["Energia A+/- R+/-"]=="R+")
-                              & (df_sez_utente["Indice"]==0)]
+df_tab_re = df_sez_utente.loc[(df_sez_utente["Valore"] != '0')
+                              & (df_sez_utente["Energia A+/- R+/-"] == "R+")
+                              & (df_sez_utente["Indice"] == 0)]
 
 if not df_tab_re.empty:
-    df_tab_re = df_tab_re[['Nome Stazione','Energia A+/- R+/-','Valore','Tempo']]
+    df_tab_re = df_tab_re[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
     df_tab_re['Valore'] = pd.to_numeric(df_tab_re['Valore'], errors='coerce')
 
     df_sum_re = df_tab_re.resample('1H').sum()
     df_sum_re['Data'] = [d.date() for d in df_sum_re.index]
     df_sum_re['Time'] = [d.time() for d in df_sum_re.index]
     df_sum_re['Data'] = pd.to_datetime(df_sum_re['Data']).dt.strftime('%d.%m.%Y')
-    df_sum_re.reset_index(inplace= True)
-    df_sum_tab_Re = df_sum_re.groupby([df_sum_re['Data'],'Time'])['Valore'].sum().unstack()
+    df_sum_re.reset_index(inplace=True)
+    df_sum_tab_Re = df_sum_re.groupby([df_sum_re['Data'], 'Time'])['Valore'].sum().unstack()
 
     print("Tabella oraria potenza reattiva:")
     print(df_sum_tab_Re)
@@ -416,7 +429,6 @@ else:
     df_sum_re.reset_index(inplace=True)
     df_sum_re['Valore'] = 0
     df_sum_tab_Re = df_sum_re.groupby([df_sum_re['Data'], 'Time'])['Valore'].sum().unstack()
-
 
     print("Tabella oraria potenza reattiva:")
     print(df_sum_tab_Re)
@@ -571,7 +583,7 @@ if not df_0_re.empty:
                                       header=False)
 
 # Dati per il foglio 3 in Excel
-df_refil = pd.DataFrame(np.zeros((31,24)))  # Tabella di 0 che pulisce le tabelle A+ e R+
+df_refil = pd.DataFrame(np.zeros((31, 24)))  # Tabella di 0 che pulisce le tabelle A+ e R+
 
 if not df_tab.empty:
     df_refil.to_excel(writer_a,
