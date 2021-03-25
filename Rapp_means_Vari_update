@@ -1,11 +1,13 @@
 # -----------------------------------------------------------
-# Convertitore di file.csv a file excel.xlsx
+# Lettore di contatore elettrico in  grado di estrapolare
+# informazioni su un determinato utente in un determinato
+# mese e di riportare i dati consultati su un foglio Excel
 #
 # (C) 2021 Simone Varischetti, Stabio, Svizzera
 # email: simon.varischetti@gmail.com
 #
-# Se file aperto per la prima volta, andare
-# sul terminale e digitate una riga alla volta :
+# Se file python aperto per la prima volta, andare
+# sul terminale e digitate i seguenti codici :
 #
 # pip install pandas
 # pip install xlwt
@@ -15,32 +17,31 @@
 # -----------------------------------------------------------
 
 import pandas as pd
-import xlsxwriter
 import numpy as np
 from openpyxl import load_workbook
 from pandas import ExcelWriter
+pd.options.mode.chained_assignment = None  # default='warn'
 
 # -----------------------------------------------------------
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\prova_cebi_ottobre.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Arapporto_curva_completo.csv'
 
 # Inserire la path con il nome del file.xlsx
-workbook = xlsxwriter.Workbook('D:\RAPPORTO_MENSILE\RAPP_mensile\prova_dicembre_xcel.xlsx')
-# nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx'
 nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Copia_1.xlsx'
+# nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx'
 
 # Inserire il nome utente desiderato
 Variabile_utente = 'Cebi MS'
 
-# Inserire il mese desiderato
+# Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
 Variabile_mese = 10
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI CSV -> PANDAS
 
-# Leggo il file.csv
+# Lettura del file.csv
 df = pd.read_csv(nome_csv,
                  sep=';',
                  header=None,
@@ -68,10 +69,7 @@ df['Mese'] = df['Data e Ora'].dt.month
 df['Giorno'] = df['Data e Ora'].dt.day
 df['Orario'] = [d.time() for d in df['Data e Ora']]
 
-# df['Valore'] = df['Valore'].str.replace(',','.')
-
-# Verifica della formazione del file (da eliminare a lavoro completo)
-print(df['Valore'].dtype)
+# Verifica della formazione del file (puntarlo nel caso di problemi sotto un df sospetto)
 writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
 df.to_excel(writer, 'Sheet1')
 writer.save()
@@ -87,13 +85,9 @@ writer_a.sheets = dict((ws.title, ws) for ws in book.worksheets)
 df_sez_utente = df[(df["Nome Stazione"] == Variabile_utente)
                    & (df["Mese"] == Variabile_mese)]
 df_sez_utente['Valore'] = df_sez_utente['Valore'] / df_sez_utente['Fattore']
-print(df_sez_utente)
-print()
 
 df_utente = df_sez_utente.loc[df_sez_utente['Nome Stazione']
                               == Variabile_utente].iloc[0]   # Estraggo i dati dell'utente selez.
-print(df_utente)
-print()
 
 print("-----------------------------------------------------------")
 # Prendo il nome utente
@@ -168,7 +162,6 @@ df_tab_utente = pd.DataFrame([df_utente.iloc[0],
                              index=['Nome', 'Abbonato', "", 'Mettering Code', "", 'Fattore',
                                     "", "", "", 'Mese', 'Anno'],
                              columns=[""])
-print(df_tab_utente)
 
 print()
 print("-----------------------------------------------------------")
@@ -189,10 +182,6 @@ df_peak = df_peak_orari_peak[(df_peak_orari_peak['Tempo'].dt.dayofweek == 0)    
                              | (df_peak_orari_peak['Tempo'].dt.dayofweek == 2)
                              | (df_peak_orari_peak['Tempo'].dt.dayofweek == 3)
                              | (df_peak_orari_peak['Tempo'].dt.dayofweek == 4)]     # 4 = venerdì
-
-writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
-df_peak.to_excel(writer, 'Sheet1')
-writer.save()
 
 df_peak_0 = df_peak.loc[(df_peak["Valore"] != '0')
                         & (df_peak["Energia A+/- R+/-"] == "A+")
@@ -278,8 +267,8 @@ df_peak_weekend = df_end_peak_off[(df_end_peak_off['Tempo'].dt.dayofweek == 5)  
                                   | (df_end_peak_off['Tempo'].dt.dayofweek == 6)]   # 6 = domenica
 
 df_peak_weekend_0 = df_peak_weekend.loc[(df_peak_weekend["Valore"] != '0')
-                                     & (df_peak_weekend["Energia A+/- R+/-"] == "A+")
-                                     & (df_peak_weekend["Indice"] == 0)]
+                                        & (df_peak_weekend["Energia A+/- R+/-"] == "A+")
+                                        & (df_peak_weekend["Indice"] == 0)]
 df_peak_weekend_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
 df_0_weekend_off = df_peak_weekend_0
 
@@ -292,7 +281,9 @@ if not df_0_weekend_off.empty:
     df_0_weekend_off['Data e Ora'] = pd.to_datetime(df_0_weekend_off['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
 
     p_max_off_weekend = df_0_weekend_off['Valore'].max()
-    data_p_max_off_weekend = df_0_weekend_off.loc[df_0_weekend_off['Valore'] == df_0_weekend_off['Valore'].max(), 'Data e Ora']
+    data_p_max_off_weekend = df_0_weekend_off.loc[df_0_weekend_off['Valore']
+                                                  == df_0_weekend_off['Valore'].max(),
+                                                  'Data e Ora']
     data_p_max_1_off_weekend = data_p_max_off_weekend.iloc[0]
 
     print("Potenza attiva massima di off peak weekend:", p_max_off_weekend, "kW", "in data:", data_p_max_1_off_weekend)
@@ -314,12 +305,10 @@ if not df_0_weekend_off.empty:
 # Determinazione dell'energia di peak e di off peak
     # Calcolo dell'energia di peak
     df_peak_0_sum = df_peak_0.resample('1H').sum()
-    energia_peak = (df_peak_0_sum.sum())                # * df_peak_0_sum.count()
+    energia_peak = (df_peak_0_sum.sum())
 
     # Calcolo dell'energia di off peak
-    #df_off_0_sum = df_off_peak_0.resample('1H').sum()
-    energia_offpeak = df_peak_week_0.sum() + df_peak_weekend_0.sum()         # * df_off_0_sum.count()
-
+    energia_offpeak = df_peak_week_0.sum() + df_peak_weekend_0.sum()
     en_tot_mens = energia_peak + energia_offpeak
 
     print("")
@@ -452,7 +441,7 @@ if not df_0_weekend_off.empty:
 # Prendo in esame la potenza reattiva di peak (dal lunedì al venerdì, dalle 08:00 alle 20:00)
 df_peak_re = df_peak.loc[(df_peak["Valore"] != '0')
                          & (df_peak["Energia A+/- R+/-"] == "R+")
-                         & (df_peak["Indice"] == 0)]         # Tabella senza 0 & Energia = R+
+                         & (df_peak["Indice"] == 0)]                    # Tabella senza 0 & Energia = R+
 
 df_peak_re['Valore'].astype(str).astype(float, errors='ignore')         # Necessario per la somma
 df_0_re = df_peak_re
@@ -596,75 +585,6 @@ else:
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI PANDAS -> EXCEL
 
-# Dati sul foglio1 in Excel
-worksheet1 = workbook.add_worksheet()     # worksheet1 = foglio1 sul file excel
-worksheet1.write('D7', nome_1)           # Nel punto D7 inserisco il nome utente (stringa)
-worksheet1.write('D10', code_1)          # Nel punto D10 inserisco il Metering Code (stringa)
-worksheet1.write('D16', mese_1)          # Nel punto D16 inserisco il mese selezionato (stringa)
-worksheet1.write('D17', anno_1)          # Nel punto D17 inserisco l'anno selezionato (stringa)
-
-# Dati sul foglio2 in Excel
-worksheet2 = workbook.add_worksheet()     # worksheet2 = foglio2 sul file excel
-if not df_0.empty:
-    worksheet2.write('B12', p_max)           # Nel punto B12 inserisco la potenza di peak del mese
-    worksheet2.write('D12', data_p_max_1)    # Nel punto D12 inserisco la data del peak
-
-if not df_0_off.empty:
-    worksheet2.write('B13', p_max_off)          # Nel punto B12 inserisco la potenza di peak del mese
-    worksheet2.write('D13', data_p_max_1_off)   # Nel punto D12 inserisco la data del peak
-    worksheet2.write('B11', p_max_mens)         # Nel punto B12 inserisco la potenza di peak del mese
-    worksheet2.write('B4', en_tot_mens)         # Nel punto B4 inserisco l'energia di peak totale
-    worksheet2.write('B5', energia_peak)        # Nel punto B5 inserisco l'energia di peak del mese
-    worksheet2.write('B6', energia_offpeak)     # Nel punto B6 inserisco l'energia di offpeak del mese
-
-    if Variabile_mese == 1:
-        worksheet2.write('B27', en_tot_mens)
-        worksheet2.write('C27', p_max_mens)
-    elif Variabile_mese == 2:
-        worksheet2.write('B28', en_tot_mens)
-        worksheet2.write('C28', p_max_mens)
-    elif Variabile_mese == 3:
-        worksheet2.write('B29', en_tot_mens)
-        worksheet2.write('C29', p_max_mens)
-    elif Variabile_mese == 4:
-        worksheet2.write('B30', en_tot_mens)
-        worksheet2.write('C30', p_max_mens)
-    elif Variabile_mese == 5:
-        worksheet2.write('B31', en_tot_mens)
-        worksheet2.write('C31', p_max_mens)
-    elif Variabile_mese == 6:
-        worksheet2.write('B32', en_tot_mens)
-        worksheet2.write('C32', p_max_mens)
-    elif Variabile_mese == 7:
-        worksheet2.write('B33', en_tot_mens)
-        worksheet2.write('C33', p_max_mens)
-    elif Variabile_mese == 8:
-        worksheet2.write('B34', en_tot_mens)
-        worksheet2.write('C34', p_max_mens)
-    elif Variabile_mese == 9:
-        worksheet2.write('B35', en_tot_mens)
-        worksheet2.write('C35', p_max_mens)
-    elif Variabile_mese == 10:
-        worksheet2.write('B36', en_tot_mens)
-        worksheet2.write('C36', p_max_mens)
-    elif Variabile_mese == 11:
-        worksheet2.write('B37', en_tot_mens)
-        worksheet2.write('C37', p_max_mens)
-    elif Variabile_mese == 12:
-        worksheet2.write('B38', en_tot_mens)
-        worksheet2.write('C38', p_max_mens)
-
-if not df_0_re.empty:
-    worksheet2.write('B19', q_max)           # Nel punto B19 inserisco la potenza reattiva
-
-if not df_0_off_re.empty:
-    worksheet2.write('B20', q_max_off)       # Nel punto B20 inserisco la potenza reattiva
-    worksheet2.write('B18', q_max_mens)      # Nel punto B18 inserisco la potenza reattiva
-
-workbook.close()                            # Termino il lavoro su excel (sempre alla fine)
-
-# Secondo metodo di scrittura su Excel
-
 # Dati per il foglio 1 in Excel
 df_tab_utente.to_excel(writer_a,
                        sheet_name='Dati cliente',
@@ -771,7 +691,7 @@ if not df_0_re.empty:
 
     df_tab_sommario_reattiva.to_excel(writer_a,
                                       sheet_name='Sommario mensile',
-                                      startrow=16,
+                                      startrow=17,
                                       startcol=1,
                                       index=False,
                                       header=False)
