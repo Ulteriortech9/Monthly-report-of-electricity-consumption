@@ -26,8 +26,8 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Arapporto_curva_completo.csv'
-
+# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Arapporto_curva_completo.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\prova_cebi_ottobre.csv'
 # Inserire la path con il nome del file.xlsx
 nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Copia_1.xlsx'
 # nome_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_test1.xlsx'
@@ -171,13 +171,12 @@ print("-----------------------------------------------------------")
 
 df_sez_utente = df_sez_utente.set_index('Data e Ora')
 df_sez_utente['Tempo'] = df_sez_utente.index
-df_sez_utente_attiva = df_sez_utente.loc[(df_sez_utente["Valore"] != '0')
-                                         & (df_sez_utente["Energia A+/- R+/-"] == "A+")
-                                         & (df_sez_utente["Indice"] == 0)]
+df_sez_utente_tab = df_sez_utente.loc[(df_sez_utente["Valore"] != '0')
+                                      & (df_sez_utente["Indice"] == 0)]
 
-df_sez_utente_reattiva = df_sez_utente.loc[(df_sez_utente["Valore"] != '0')
-                                           & (df_sez_utente["Energia A+/- R+/-"] == "R+")
-                                           & (df_sez_utente["Indice"] == 0)]
+df_sez_utente_attiva = df_sez_utente_tab.loc[(df_sez_utente_tab["Energia A+/- R+/-"] == "A+")]
+
+df_sez_utente_reattiva = df_sez_utente_tab.loc[(df_sez_utente_tab["Energia A+/- R+/-"] == "R+")]
 
 # Prendo in esame la potenza attiva di peak (dal lunedì al venerdì, dalle 08:00 alle 20:00)
 df_peak_orari_peak = df_sez_utente_attiva.between_time('08:15', '20:00')
@@ -210,24 +209,6 @@ if not df_0.empty:
 # Prendo in esame la potenza attiva di off peak durante la settimana (dalle 20:15 alle 08:00 lun/ven)
 df_week_peak_off = df_sez_utente_attiva.between_time('20:15', '08:00')
 df_week_peak_off.index = pd.to_datetime(df_week_peak_off.index)
-
-df_off_peak_0 = df_week_peak_off
-df_off_peak_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
-df_0_off = df_off_peak_0
-
-if not df_0_off.empty:
-    df_off_peak_0 = pd.to_numeric(df_off_peak_0['Valore'], errors='coerce')     # Per somma Energia
-    df_off_peak_0.index = pd.to_datetime(df_off_peak_0.index, errors='ignore')
-
-    df_0_off.reset_index(level=0, inplace=True)
-    df_0_off = df_0_off[['Data e Ora', 'Nome Stazione', 'Energia A+/- R+/-', 'Valore']]
-    df_0_off['Data e Ora'] = pd.to_datetime(df_0_off['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
-
-    p_max_off = df_0_off['Valore'].max()
-    data_p_max_off = df_0_off.loc[df_0_off['Valore'] == df_0_off['Valore'].max(), 'Data e Ora']
-    data_p_max_1_off = data_p_max_off.iloc[0]
-
-    print("Potenza attiva massima di off peak:", p_max_off, "kW", "in data:", data_p_max_1_off)
 
 # Tabella oraria con valori di off-peak per la settimana
 df_peak_week = df_week_peak_off[(df_week_peak_off['Tempo'].dt.dayofweek == 0)       # 1 = lunedì
@@ -289,8 +270,14 @@ if not df_0_weekend_off.empty:
 # Determino il valore di potenza maggiore di off peak tra la settimana ed il weekend
     if p_max_off_week > p_max_off_weekend:
         p_max_off = p_max_off_week
+        data_p_max_1_off = data_p_max_1_off_week
+        print("Potenza attiva massima di off peak:",
+              p_max_off_week, "kW", "in data:", data_p_max_1_off_week)
     else:
         p_max_off = p_max_off_weekend
+        data_p_max_1_off = data_p_max_1_off_weekend
+        print("Potenza attiva massima di off peak:",
+              p_max_off_weekend, "kW", "in data:", data_p_max_1_off_weekend)
 
 # Determino il valore di potenza maggiore fra il valore di peak e di off peak
     if p_max > p_max_off:
