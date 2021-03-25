@@ -503,76 +503,59 @@ print("-----------------------------------------------------------")
 
 # Creo la tabella con l'energia attiva (A+)
 df_tab = df_sez_utente_attiva
+df_tab = df_tab[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
+df_tab['Valore'] = pd.to_numeric(df_tab['Valore'], errors='coerce')
+
+df_sum = df_tab.resample('1H').sum()
+df_sum['Data'] = [d.date() for d in df_sum.index]
+df_sum['Time'] = [d.time() for d in df_sum.index]
+df_sum['Data'] = pd.to_datetime(df_sum['Data']).dt.strftime('%d.%m.%Y')
+df_sum.reset_index(inplace=True)
 
 if not df_tab.empty:
-    df_tab = df_tab[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
-    df_tab['Valore'] = pd.to_numeric(df_tab['Valore'], errors='coerce')
-
-    df_sum = df_tab.resample('1H').sum()
-    df_sum['Data'] = [d.date() for d in df_sum.index]
-    df_sum['Time'] = [d.time() for d in df_sum.index]
-    df_sum['Data'] = pd.to_datetime(df_sum['Data']).dt.strftime('%d.%m.%Y')
-    df_sum.reset_index(inplace=True)
     df_sum_tab = df_sum.groupby([df_sum['Data'], 'Time'])['Valore'].sum().unstack()
 
     print("Tabella oraria potenza attiva:")
     print(df_sum_tab)
 
 else:
-    df_tab = df_tab[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
-    df_tab['Valore'] = pd.to_numeric(df_tab['Valore'], errors='coerce')
-
-    df_sum = df_tab.resample('1H').sum()
-    df_sum['Data'] = [d.date() for d in df_sum.index]
-    df_sum['Time'] = [d.time() for d in df_sum.index]
-    df_sum['Data'] = pd.to_datetime(df_sum['Data']).dt.strftime('%d.%m.%Y')
-    df_sum.reset_index(inplace=True)
     df_sum['Valore'] = 0
     df_sum_tab = df_sum.groupby([df_sum['Data'], 'Time'])['Valore'].sum().unstack()
 
     print("Tabella oraria potenza attiva:")
     print(df_sum_tab)
 
-    print()
-    print("-----------------------------------------------------------")
+print()
+print("-----------------------------------------------------------")
 
 # -----------------------------------------------------------
 # ELABORAZIONE DATI PER FOGLIO 4 EXCEL
 
 # Creo la tabella con l'energia reattiva (R+)
 df_tab_re = df_sez_utente_reattiva
+df_tab_re = df_tab_re[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
+df_tab_re['Valore'] = pd.to_numeric(df_tab_re['Valore'], errors='coerce')
+df_sum_re = df_tab_re.resample('1H').sum()
+df_sum_re['Data'] = [d.date() for d in df_sum_re.index]
+df_sum_re['Time'] = [d.time() for d in df_sum_re.index]
+df_sum_re['Data'] = pd.to_datetime(df_sum_re['Data']).dt.strftime('%d.%m.%Y')
+df_sum_re.reset_index(inplace=True)
 
 if not df_tab_re.empty:
-    df_tab_re = df_tab_re[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
-    df_tab_re['Valore'] = pd.to_numeric(df_tab_re['Valore'], errors='coerce')
-
-    df_sum_re = df_tab_re.resample('1H').sum()
-    df_sum_re['Data'] = [d.date() for d in df_sum_re.index]
-    df_sum_re['Time'] = [d.time() for d in df_sum_re.index]
-    df_sum_re['Data'] = pd.to_datetime(df_sum_re['Data']).dt.strftime('%d.%m.%Y')
-    df_sum_re.reset_index(inplace=True)
     df_sum_tab_Re = df_sum_re.groupby([df_sum_re['Data'], 'Time'])['Valore'].sum().unstack()
 
     print("Tabella oraria potenza reattiva:")
     print(df_sum_tab_Re)
 
 else:
-    df_tab_re = df_tab[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
-    df_tab_re['Valore'] = pd.to_numeric(df_tab['Valore'], errors='coerce')
-
-    df_sum_re = df_tab.resample('1H').sum()
-    df_sum_re['Data'] = [d.date() for d in df_sum_re.index]
-    df_sum_re['Time'] = [d.time() for d in df_sum_re.index]
-    df_sum_re['Data'] = pd.to_datetime(df_sum_re['Data']).dt.strftime('%d.%m.%Y')
-    df_sum_re.reset_index(inplace=True)
     df_sum_re['Valore'] = 0
     df_sum_tab_Re = df_sum_re.groupby([df_sum_re['Data'], 'Time'])['Valore'].sum().unstack()
 
     print("Tabella oraria potenza reattiva:")
     print(df_sum_tab_Re)
 
-    print()
-    print("-----------------------------------------------------------")
+print()
+print("-----------------------------------------------------------")
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI PANDAS -> EXCEL
@@ -631,6 +614,7 @@ if not df_0.empty:
                     index=False, header=False)
 
 if not df_0_re.empty:
+
     df_tab_sommario_reattiva.to_excel(writer_a,
                                       sheet_name='Sommario mensile',
                                       startrow=17,
