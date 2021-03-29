@@ -33,18 +33,21 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Arapporto_curva_completo.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Acquedotto_delta.csv'
 
 # Inserire le path con i nomi dei file.xlsx
-lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Cebi_MS.xlsx',
-               'D:\RAPPORTO_MENSILE\RAPP_mensile\Faps.xlsx']
+lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx']
 
 # Inserire i nomi nella lista utenti
-lista_utenti = ['Cebi MS',
-                'Faps']
+lista_utenti = ['Acquedotto mapp-1033',
+                'Delta']          # Terzo foglio
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
-Variabile_mese = 10
+Variabile_mese = 8
+
+# Inserire l'anno desiderato
+Variabile_anno = 2020
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI CSV -> PANDAS
@@ -77,7 +80,7 @@ df['Mese'] = df['Data e Ora'].dt.month
 df['Giorno'] = df['Data e Ora'].dt.day
 df['Orario'] = [d.time() for d in df['Data e Ora']]
 
-# Verifica della formazione del file (puntarlo nel caso di problemi sotto un df sospetto)
+# Verifica delle tabelle create (scrivere sotto il df desiderato per verificarne la scrittura)
 writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
 df.to_excel(writer, 'Sheet1')
 writer.save()
@@ -89,6 +92,7 @@ for i in [0, 1]:
 
     nome_excel = lista_excel[i]
     print(nome_excel)
+    print()
 
     # Codice necessario alla stesura del rapporto
     book = load_workbook(nome_excel)
@@ -99,7 +103,8 @@ for i in [0, 1]:
 
     # Prendo in esame l'utente selezionato
     df_sez_utente = df[(df["Nome Stazione"] == Variabile_utente)
-                       & (df["Mese"] == Variabile_mese)]
+                       & (df["Mese"] == Variabile_mese)
+                       & (df["Anno"] == Variabile_anno)]
     df_sez_utente['Valore'] = df_sez_utente['Valore'] / df_sez_utente['Fattore']
 
     df_utente = df_sez_utente.loc[df_sez_utente['Nome Stazione']
@@ -340,7 +345,8 @@ for i in [0, 1]:
         tab_utente["Valore"] = tab_utente["Valore"] / tab_utente["Fattore"]
         tab_utente = tab_utente.loc[(tab_utente["Valore"] != '0')
                                     & (tab_utente["Energia A+/- R+/-"] == "A+")
-                                    & (tab_utente["Indice"] == 0)]
+                                    & (tab_utente["Indice"] == 0)
+                                    & (tab_utente["Anno"] == Variabile_anno)]
 
         tab_utente_gen = tab_utente.loc[tab_utente["Mese"] == 1]
         en_gen = tab_utente_gen["Valore"].sum()
@@ -518,7 +524,6 @@ for i in [0, 1]:
     else:
         df_sum['Valore'] = 0
         df_sum_tab = df_sum.groupby([df_sum['Data'], 'Time'])['Valore'].sum().unstack()
-
         print("Tabella oraria potenza attiva:")
         print(df_sum_tab)
 
@@ -631,6 +636,10 @@ for i in [0, 1]:
         df_sum_tab.to_excel(writer_a,
                             sheet_name='Tabella oraria A+',
                             startrow=2)
+    else:
+        df_refil.to_excel(writer_a,
+                          sheet_name='Tabella oraria A+',
+                          startrow=2)
 
     # Dati per il foglio 4 in Excel
     if not df_tab_re.empty:
@@ -641,35 +650,9 @@ for i in [0, 1]:
         df_sum_tab_Re.to_excel(writer_a,
                                sheet_name='Tabella oraria R+',
                                startrow=2)
+    else:
+        df_refil.to_excel(writer_a,
+                          sheet_name='Tabella oraria R+',
+                          startrow=2)
 
-    writer_a.save()
-
-    # -----------------------------------------------------------
-    # ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
-    mittente = '@gmail.com'
-    destinatari = ['@gmail.com', '@gmail.com']       # ['@gmail.com', '@gmail.com', '@gmail.com']
-
-    msg = MIMEMultipart()
-
-    msg['From'] = mittente
-    msg['To'] = ", ".join(destinatari)
-    msg['Subject'] = "Oggeto di Prova"
-
-    Testo_mail = "Testo di Prova"
-
-    msg.attach(MIMEText(Testo_mail, 'plain'))
-    filename = "Rapporto_mensile.xlsx"
-    attachment = open(lista_excel[i], "rb")
-
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload(attachment.read())
-    encoders.encode_base64(part)
-    part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
-
-    msg.attach(part)
-    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    server.ehlo()
-    server.login(mittente, 'Pasword_gmail')
-    text = msg.as_string()
-    server.sendmail(mittente, destinatari, text)
-    server.quit()
+writer_a.save()
