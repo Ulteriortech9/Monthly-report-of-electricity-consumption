@@ -227,6 +227,31 @@ for i in [0, 1]:
 
         print("Potenza attiva massima di peak:", p_max, "kW", "in data:", data_p_max_1)
 
+    else:
+        data_sommario_attiva = {'a': [0,
+                                      0,
+                                      0,
+                                      "", "", "", "",
+                                      0,
+                                      0, 0,
+                                      "", "", "", "",
+                                      0, 0, 0],
+                                'b': ['kWh',
+                                      'kWh',
+                                      'kWh',
+                                      "", "", "", "",
+                                      'kW',
+                                      'kW',
+                                      'kW',
+                                      "", "", "", "",
+                                      'kVar', 'kVar', 'kVar'],
+                                'c': ["", "", "", "", "", "", "",
+                                      'data',
+                                      0,
+                                      0,
+                                      "", "", "", "", "", "", ""]}
+        df_tab_sommario_attiva = pd.DataFrame(data_sommario_attiva)
+
     # Prendo in esame la potenza attiva di off peak durante la settimana (dalle 20:15 alle 08:00 lun/ven)
     df_week_peak_off = df_sez_utente_attiva.between_time('20:15', '08:00')
     df_week_peak_off.index = pd.to_datetime(df_week_peak_off.index)
@@ -436,6 +461,31 @@ for i in [0, 1]:
                           'b': [p_max_mens]}
         df_tab_riass = pd.DataFrame(data_riassunto)
 
+    else:
+        data_sommario_attiva = {'a': [0,
+                                      0,
+                                      0,
+                                      "", "", "", "",
+                                      0,
+                                      0, 0,
+                                      "", "", "", "",
+                                      0, 0, 0],
+                                'b': ['kWh',
+                                      'kWh',
+                                      'kWh',
+                                      "", "", "", "",
+                                      'kW',
+                                      'kW',
+                                      'kW',
+                                      "", "", "", "",
+                                      'kVar', 'kVar', 'kVar'],
+                                'c': ["", "", "", "", "", "", "",
+                                      'data',
+                                      "",
+                                      "",
+                                      "", "", "", "", "", "", ""]}
+        df_tab_sommario_attiva = pd.DataFrame(data_sommario_attiva)
+
     # -----------------------------------------------------------
     # ELABORAZIONE DATI PER FOGLIO 2 EXCEL (Potenza reattiva R+)
 
@@ -562,6 +612,46 @@ for i in [0, 1]:
 
     # -----------------------------------------------------------
     # ESPORTAZIONE DATI PANDAS -> EXCEL
+    data_mens_refill = {'a': [0],
+                        'b': [0]}
+    df_mens_refill = pd.DataFrame(data_mens_refill)
+
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=26, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=27, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=28, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=29, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=30, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=31, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=32, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=33, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=34, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=35, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=36, startcol=1,
+                            index=False, header=False)
+    df_mens_refill.to_excel(writer_a,
+                            sheet_name='Sommario mensile', startrow=37, startcol=1,
+                            index=False, header=False)
 
     # Dati per il foglio 1 in Excel
     df_tab_utente.to_excel(writer_a,
@@ -615,6 +705,13 @@ for i in [0, 1]:
         df_dic.to_excel(writer_a,
                         sheet_name='Sommario mensile', startrow=37, startcol=1,
                         index=False, header=False)
+    else:
+        df_tab_sommario_attiva.to_excel(writer_a,
+                                        sheet_name='Sommario mensile',
+                                        startrow=3,
+                                        startcol=1,
+                                        index=False,
+                                        header=False)
 
     if not df_0_re.empty:
 
@@ -655,4 +752,41 @@ for i in [0, 1]:
                           sheet_name='Tabella oraria R+',
                           startrow=2)
 
-writer_a.save()
+    writer_a.save()
+
+# -----------------------------------------------------------
+    # ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
+    mittente = '@gmail.com'           # Inserire mail principale
+    destinatari = ['@gmail.com',
+                   '@gmail.com']       # ['@gmail.com', '@gmail.com', '@gmail.com']
+
+    msg = MIMEMultipart()
+
+    msg['From'] = mittente
+    msg['To'] = ", ".join(destinatari)
+    msg['Subject'] = "Rapporto mensile consumo elettrico"
+
+    Testo_mail = "Gentile cliente, \n" \
+                 "Come concordato, le inviamo in allegato il suo rapporto " \
+                 "mensile sul consumo elettrico. \n" \
+                 "Per qualsiasi domanda, può rivolgersi a noi tramite il nostro numero di " \
+                 "telefono o in risposta a questa mail. \n" \
+                 "Distinti saluti, AMS Stabio"
+
+    msg.attach(MIMEText(Testo_mail, 'plain'))
+    filename = "Rapporto_mensile.xlsx"
+    attachment = open(lista_excel[i], "rb")
+
+    part = MIMEBase('application', 'octet-stream')
+    part.set_payload(attachment.read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+    msg.attach(part)
+    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    server.ehlo()
+    server.login(mittente, 'Password_gmail')    # inserire password account gmail
+    text = msg.as_string()
+    server.sendmail(mittente, destinatari, text)
+
+server.quit()
