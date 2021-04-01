@@ -172,6 +172,9 @@ for i in [0, 1]:
     anno_1 = df_utente.iloc[9]                                  # Variabile per identificare l'anno
     print("Anno:", anno_1)
 
+    if fattore_1 == 1:
+        fattore_1 = "Valore non trovato"
+
     df_tab_utente = pd.DataFrame([df_utente.iloc[0],
                                   abbonato_1,
                                   "",
