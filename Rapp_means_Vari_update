@@ -33,15 +33,15 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Vite6_spazzi_vuoti.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Acquedotto_delta_2020_21.csv'
 
 # Inserire le path con i nomi dei file.xlsx
-lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx',
-               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Vite6.xlsx']
+lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx']
 
 # Inserire i nomi nella lista utenti
-lista_utenti = ['Delta',
-                '1137_V.Vite6']          # Terzo foglio
+lista_utenti = ['Acquedotto mapp-1033',
+                'Delta']          # Terzo foglio
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
 Variabile_mese = 2
@@ -53,24 +53,39 @@ Variabile_anno = 2021
 # ESPORTAZIONE DATI CSV -> PANDAS
 
 # Lettura del file.csv
+chunk_size = 10000
+nome_colonne = ['Nome Stazione',
+                'Metering Code',
+                'Data e Ora',
+                'Energia A+/- R+/-',
+                'Valore',
+                'Dimensione kW/kVar',
+                'Indice',
+                'Fattore',
+                'Abbonato']
+
+dtype = {'Nome Stazione': object,
+         'Metering Code': object,
+         'Data e Ora': object,
+         'Energia A+/- R+/-': object,
+         'Valore': float,
+         'Dimensione kW/kVar': object,
+         'Indice': int,
+         'Fattore': float,
+         'Abbonato': float}
+
 df = pd.read_csv(nome_csv,
                  sep=';',
                  header=None,
                  skiprows=1,
                  decimal=',',
-                 names=['Nome Stazione',
-                        'Metering Code',
-                        'Data e Ora',
-                        'Energia A+/- R+/-',
-                        'Valore',
-                        'Dimensione kW/kVar',
-                        'Indice',
-                        'Fattore',
-                        'Abbonato'])
+                 names=nome_colonne)
+
+print(df.info())
+
 df["Fattore"] = df["Fattore"].fillna(1)
 df["Metering Code"] = df["Metering Code"].fillna("Valore non trovato")
 
-print(df["Fattore"])
 # -----------------------------------------------------------
 # ELABORAZIONE DATI PER FOGLIO 1 EXCEL
 
@@ -704,70 +719,44 @@ for i in [0, 1]:
                                           header=False)
 
     # Dati per il foglio 3 in Excel
-    df_refil = pd.DataFrame(np.zeros((31, 24)))  # Tabella di 0 che pulisce le tabelle A+ e R+
+    df_refill = pd.DataFrame(np.zeros((31, 24)),
+                             index=['---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---',
+                                    '---', '---', '---', '---'])
+    # Tabella di 0 che pulisce le tabelle A+ e R+
 
     if not df_tab.empty:
-        df_refil.to_excel(writer_a,
-                          sheet_name='Tabella oraria A+',
-                          startrow=2)
+        df_refill.to_excel(writer_a,
+                           sheet_name='Tabella oraria A+',
+                           startrow=2)
 
         df_sum_tab.to_excel(writer_a,
                             sheet_name='Tabella oraria A+',
                             startrow=2)
     else:
-        df_refil.to_excel(writer_a,
-                          sheet_name='Tabella oraria A+',
-                          startrow=1)
+        df_refill.to_excel(writer_a,
+                           sheet_name='Tabella oraria A+',
+                           startrow=1)
 
     # Dati per il foglio 4 in Excel
     if not df_tab_re.empty:
-        df_refil.to_excel(writer_a,
-                          sheet_name='Tabella oraria R+',
-                          startrow=2)
+        df_refill.to_excel(writer_a,
+                           sheet_name='Tabella oraria R+',
+                           startrow=2)
 
         df_sum_tab_Re.to_excel(writer_a,
                                sheet_name='Tabella oraria R+',
                                startrow=2)
     else:
-        df_refil.to_excel(writer_a,
-                          sheet_name='Tabella oraria R+',
-                          startrow=2)
+        df_refill.to_excel(writer_a,
+                           sheet_name='Tabella oraria R+',
+                           startrow=2)
 
     writer_a.save()
-
-# -----------------------------------------------------------
-    # ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
-    mittente = 'simonev459@gmail.com'           # Inserire mail principale
-    destinatari = ['simonev459@gmail.com',
-                   'simonev459@gmail.com']       # ['@gmail.com', '@gmail.com', '@gmail.com']
-
-    msg = MIMEMultipart()
-
-    msg['From'] = mittente
-    msg['To'] = ", ".join(destinatari)
-    msg['Subject'] = "Rapporto mensile consumo elettrico"
-
-    Testo_mail = "Gentile cliente, \n" \
-                 "Come concordato, le inviamo in allegato il suo rapporto " \
-                 "mensile sul consumo elettrico. \n" \
-                 "Per qualsiasi domanda, può rivolgersi a noi tramite il nostro numero di " \
-                 "telefono o in risposta a questa mail. \n" \
-                 "Distinti saluti, AMS Stabio"
-
-    msg.attach(MIMEText(Testo_mail, 'plain'))
-    filename = "Rapporto_mensile.xlsx"
-    attachment = open(lista_excel[i], "rb")
-
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload(attachment.read())
-    encoders.encode_base64(part)
-    part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
-
-    msg.attach(part)
-    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    server.ehlo()
-    server.login(mittente, 'porcellino')    # inserire password account gmail
-    text = msg.as_string()
-    server.sendmail(mittente, destinatari, text)
-
-server.quit()
