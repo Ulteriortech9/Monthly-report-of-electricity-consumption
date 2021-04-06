@@ -64,22 +64,23 @@ nome_colonne = ['Nome Stazione',
                 'Fattore',
                 'Abbonato']
 
-dtype = {'Nome Stazione': object,
-         'Metering Code': object,
-         'Data e Ora': object,
-         'Energia A+/- R+/-': object,
-         'Valore': float,
-         'Dimensione kW/kVar': object,
-         'Indice': int,
-         'Fattore': float,
-         'Abbonato': float}
+dtype = {'Nome Stazione': 'object',
+         'Metering Code': 'object',
+         'Data e Ora': 'object',
+         'Energia A+/- R+/-': 'object',
+         'Valore': 'float32',
+         'Dimensione kW/kVar': 'object',
+         'Indice': 'int32',
+         'Fattore': 'float32',
+         'Abbonato': 'float32'}
 
 df = pd.read_csv(nome_csv,
                  sep=';',
                  header=None,
                  skiprows=1,
                  decimal=',',
-                 names=nome_colonne)
+                 names=nome_colonne,
+                 dtype=dtype)
 
 print(df.info())
 
