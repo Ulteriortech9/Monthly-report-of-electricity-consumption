@@ -1,3 +1,27 @@
+# -----------------------------------------------------------
+# Lettore di contatore elettrico in  grado di estrapolare
+# informazioni su un determinato utente in un determinato
+# mese e di riportare i dati consultati su un foglio Excel
+#
+# (C) 2021 Simone Varischetti, Stabio, Svizzera
+# email: simon.varischetti@gmail.com
+#
+# Se file python aperto per la prima volta, andare
+# sul terminale e digitate i seguenti codici :
+#
+# pip install pandas
+# pip install xlwt
+# pip install openpyxl
+# pip install xlsxwriter
+# pip install Datetime
+# -----------------------------------------------------------
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
@@ -23,6 +47,8 @@ lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Eni Suisse mapp-14
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\I-Trattori mapp-225.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Luxury Goods INT-1137.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Luxury Goods Montastahl cap 8.xlsx']
+
+template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
 Variabile_mese = 3
@@ -99,7 +125,7 @@ for i in range(len(df_nome)):
 
     # Codice lettura completa degli utenti
     # Codice necessario alla stesura del rapporto
-    book = load_workbook(nome_excel)
+    book = load_workbook(template_excel)
     writer_a = pd.ExcelWriter(nome_excel,
                               engine='openpyxl')
     writer_a.book = book
