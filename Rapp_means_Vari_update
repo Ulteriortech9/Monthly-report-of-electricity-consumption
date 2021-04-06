@@ -37,16 +37,27 @@ pd.options.mode.chained_assignment = None  # default='warn'
 nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
 
 # Inserire le path con i nomi dei file.xlsx
-lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Eni Suisse mapp-1418.xlsx',
+lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx',
-               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Eni Suisse mapp-1418.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Gaggiolo Business Center.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Guess Europe.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Istituto S. Filomena mapp.541.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Istituto S. Filomena_1.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\I-Trattori mapp-225.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Luxury Goods INT-1137.xlsx',
-               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Luxury Goods Montastahl cap 8.xlsx']
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Luxury Goods Montastahl cap 8.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Luxury Goods Montastahl cap10.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Mag._Generali Punto-Franco_Padronale.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Mag._Generali_Punto Fresco 1.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\VF intern. Vite 3.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Montalbano SA - 228_ padronale.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Montalbano SA - 228.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\
+               North Face LAVEGGIO 4.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Protezione Civile Mendrisiotto mapp.787.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Scuole Elementari mapp.961.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\SS Gerrette.xlsx']
 
 template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
 
@@ -74,11 +85,11 @@ dtype = {'Nome Stazione': 'object',
          'Metering Code': 'object',
          'Data e Ora': 'object',
          'Energia A+/- R+/-': 'object',
-         'Valore': 'float64',
+         'Valore': 'float32',
          'Dimensione kW/kVar': 'object',
-         'Indice': 'int64',
+         'Indice': 'int32',
          'Fattore': 'object',
-         'Abbonato': 'float64'}
+         'Abbonato': 'float32'}
 
 dask_df = dd.read_csv(nome_csv,
                       sep=';',
@@ -100,7 +111,10 @@ for i in range(len(df_nome)):
     df = dask_df[dask_df['Nome Stazione'] == Variabile_utente]
     df = df.compute()
 
+    print()
     print(df.info())
+    print(Variabile_utente)
+    print("-----------------------------------------------------------")
 
     df["Fattore"] = df["Fattore"].fillna(1)
     df["Metering Code"] = df["Metering Code"].fillna("Valore non trovato")
@@ -140,64 +154,45 @@ for i in range(len(df_nome)):
     df_utente = df_sez_utente.loc[df_sez_utente['Nome Stazione']
                                   == Variabile_utente].iloc[0]   # Estraggo i dati dell'utente selez.
 
-    print("-----------------------------------------------------------")
     # Prendo il nome utente
     nome_1 = df_utente.iloc[0]                                  # Variabile per identificare il nome utente
-    print("Nome utente selezionato:", nome_1)
-
     # Prendo il Metering Code
     code_1 = df_utente.iloc[1]                                  # Variabile per identificare il Metering Code
-    print("Metering Code dell'utente:", code_1)
 
     # Prendo il Fattore
     fattore_1 = df_utente.iloc[7]                               # Variabile per identificare il fattore
-    print("Fattore di potenza:", fattore_1)
 
     # Prendo il numero abbonato
     abbonato_1 = df_utente.iloc[8]                              # Variabile per identificare il nbr. abbonato
-    print("Numero abbonato:", abbonato_1)
 
     # Prendo il mese e l'anno
     mese_1 = df_utente.iloc[10]                                 # Variabile per identificare il mese
     if Variabile_mese == 1:
         mese_nom = "Gennaio"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 2:
         mese_nom = "Febbraio"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 3:
         mese_nom = "Marzo"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 4:
         mese_nom = "Aprile"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 5:
         mese_nom = "Maggio"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 6:
         mese_nom = "Giugno"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 7:
         mese_nom = "Luglio"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 8:
         mese_nom = "Agosto"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 9:
         mese_nom = "Settembre"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 10:
         mese_nom = "Ottobre"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 11:
         mese_nom = "Novembre"
-        print("Mese:", mese_nom)
     elif Variabile_mese == 12:
         mese_nom = "Dicembre"
-        print("Mese:", mese_nom)
 
     anno_1 = df_utente.iloc[9]                                  # Variabile per identificare l'anno
-    print("Anno:", anno_1)
 
     if fattore_1 == 1:
         fattore_1 = "Valore non trovato"
@@ -216,9 +211,6 @@ for i in range(len(df_nome)):
                                  index=['Nome', 'Abbonato', "", 'Mettering Code', "", 'Fattore',
                                         "", "", "", 'Mese', 'Anno'],
                                  columns=[""])
-
-    print()
-    print("-----------------------------------------------------------")
 
     # -----------------------------------------------------------
     # ELABORAZIONE DATI PER FOGLIO 2 EXCEL (Potenza attiva A+)
@@ -257,8 +249,6 @@ for i in range(len(df_nome)):
         p_max = df_0['Valore'].max()
         data_p_max = df_0.loc[df_0['Valore'] == df_0['Valore'].max(), 'Data e Ora']
         data_p_max_1 = data_p_max.iloc[0]
-
-        print("Potenza attiva massima di peak:", p_max, "kW", "in data:", data_p_max_1)
 
     # Prendo in esame la potenza attiva di off peak durante la settimana (dalle 20:15 alle 08:00 lun/ven)
     df_week_peak_off = df_sez_utente_attiva.between_time('20:15', '08:00')
@@ -321,21 +311,15 @@ for i in range(len(df_nome)):
         if p_max_off_week > p_max_off_weekend:
             p_max_off = p_max_off_week
             data_p_max_1_off = data_p_max_1_off_week
-            print("Potenza attiva massima di off peak:",
-                  p_max_off_week, "kW", "in data:", data_p_max_1_off_week)
         else:
             p_max_off = p_max_off_weekend
             data_p_max_1_off = data_p_max_1_off_weekend
-            print("Potenza attiva massima di off peak:",
-                  p_max_off_weekend, "kW", "in data:", data_p_max_1_off_weekend)
 
     # Determino il valore di potenza maggiore fra il valore di peak e di off peak
         if p_max > p_max_off:
             p_max_mens = p_max
-            print("Potenza attiva massima mensile = ", p_max, "kW")
         else:
             p_max_mens = p_max_off
-            print("Potenza attiva massima mensile = ", p_max_off, "kW")
 
     # Determinazione dell'energia di peak e di off peak
         # Calcolo dell'energia di peak
@@ -345,11 +329,6 @@ for i in range(len(df_nome)):
         # Calcolo dell'energia di off peak
         energia_offpeak = df_peak_week_0.sum() + df_peak_weekend_0.sum()
         en_tot_mens = energia_peak + energia_offpeak
-
-        print("")
-        print("Energia di peak:", energia_peak, "kWh")
-        print("Energia di off peak:", energia_offpeak, "kWh")
-        print("Energia totale mensile:", en_tot_mens, "kWh")
 
         data_sommario_attiva = {'a': [en_tot_mens,
                                       energia_peak,
@@ -518,9 +497,6 @@ for i in range(len(df_nome)):
         data_q_max = df_0_re.loc[df_0_re['Valore'] == df_0_re['Valore'].max(), 'Data e Ora']
         data_q_max_1 = data_q_max.iloc[0]
 
-        print("")
-        print("Potenza reattiva massima di peak:", q_max, "kVar", "in data:", data_q_max_1)
-
     # Prendo in esame la potenza reattiva di off peak (fuori dal lunedì al venerdì, dalle 08:00 alle 20:00)
     df_off_peak_re = df_sez_utente_reattiva.between_time('20:15', '08:00')
     df_off_peak_re.index = pd.to_datetime(df_off_peak_re.index)
@@ -540,15 +516,11 @@ for i in range(len(df_nome)):
         data_q_max_off = df_0_off_re.loc[df_0_off_re['Valore'] == df_0_off_re['Valore'].max(), 'Data e Ora']
         data_q_max_1_off = data_q_max_off.iloc[0]
 
-        print("Potenza reattiva massima di off peak:", q_max_off, "kVar", "in data:", data_q_max_1_off)
-
     # Determino il valore di potenza reattiva maggiore fra il valore di peak e di off peak
         if q_max > q_max_off:
             q_max_mens = q_max
-            print("Potenza reattiva massima mensile = ", q_max, "kVar")
         else:
             q_max_mens = q_max_off
-            print("Potenza reattiva massima mensile = ", q_max_off, "kVar")
 
         data_sommario_reattiva = {'a': [q_max_mens,
                                         q_max,
@@ -557,9 +529,6 @@ for i in range(len(df_nome)):
                                         'kVar',
                                         'kVar']}
         df_tab_sommario_reattiva = pd.DataFrame(data_sommario_reattiva)
-
-    print()
-    print("-----------------------------------------------------------")
 
     # -----------------------------------------------------------
     # ELABORAZIONE DATI PER FOGLIO 3 EXCEL
@@ -577,18 +546,9 @@ for i in range(len(df_nome)):
 
     if not df_tab.empty:
         df_sum_tab = df_sum.groupby([df_sum['Data'], 'Time'])['Valore'].sum().unstack()
-
-        print("Tabella oraria potenza attiva:")
-        print(df_sum_tab)
-
     else:
         df_sum['Valore'] = 0
         df_sum_tab = df_sum.groupby([df_sum['Data'], 'Time'])['Valore'].sum().unstack()
-        print("Tabella oraria potenza attiva:")
-        print(df_sum_tab)
-
-    print()
-    print("-----------------------------------------------------------")
 
     # -----------------------------------------------------------
     # ELABORAZIONE DATI PER FOGLIO 4 EXCEL
@@ -606,19 +566,9 @@ for i in range(len(df_nome)):
 
     if not df_tab_re.empty:
         df_sum_tab_Re = df_sum_re.groupby([df_sum_re['Data'], 'Time'])['Valore'].sum().unstack()
-
-        print("Tabella oraria potenza reattiva:")
-        print(df_sum_tab_Re)
-
     else:
         df_sum_re['Valore'] = 0
         df_sum_tab_Re = df_sum_re.groupby([df_sum_re['Data'], 'Time'])['Valore'].sum().unstack()
-
-        print("Tabella oraria potenza reattiva:")
-        print(df_sum_tab_Re)
-
-    print()
-    print("-----------------------------------------------------------")
 
     # -----------------------------------------------------------
     # ESPORTAZIONE DATI PANDAS -> EXCEL
