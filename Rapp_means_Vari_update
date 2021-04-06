@@ -41,11 +41,6 @@ lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Eni Suisse mapp-14
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx']
 
-# Inserire i nomi nella lista utenti
-lista_utenti = ['Eni Suisse mapp-1418',
-                'Delta',
-                'Acquedotto mapp-1033']          # Terzo foglio
-
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
 Variabile_mese = 3
 
@@ -84,8 +79,13 @@ dask_df = dd.read_csv(nome_csv,
                       names=nome_colonne,
                       dtype=dtype)
 
-for i in range(len(lista_utenti)):
-    Variabile_utente = lista_utenti[i]
+df_sez_nom = dask_df.compute()
+df_nome = df_sez_nom["Nome Stazione"]
+df_nome.drop_duplicates(keep="first", inplace=True)
+df_nome = df_nome.tolist()
+
+for i in range(len(df_nome)):
+    Variabile_utente = df_nome[i]
     nome_excel = lista_excel[i]
 
     df = dask_df[dask_df['Nome Stazione'] == Variabile_utente]
@@ -682,7 +682,6 @@ for i in range(len(lista_utenti)):
                                         header=False)
 
     if not df_0_re.empty:
-
         df_tab_sommario_reattiva.to_excel(writer_a,
                                           sheet_name='Sommario mensile',
                                           startrow=17,
