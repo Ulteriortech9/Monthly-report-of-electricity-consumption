@@ -24,6 +24,7 @@ from email import encoders
 
 import numpy as np
 import pandas as pd
+import dask.dataframe as dd
 from openpyxl import load_workbook
 from pandas import ExcelWriter
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -33,7 +34,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Acquedotto_delta_2020_21.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
 
 # Inserire le path con i nomi dei file.xlsx
 lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx',
@@ -53,7 +54,6 @@ Variabile_anno = 2021
 # ESPORTAZIONE DATI CSV -> PANDAS
 
 # Lettura del file.csv
-chunk_size = 10000
 nome_colonne = ['Nome Stazione',
                 'Metering Code',
                 'Data e Ora',
@@ -68,51 +68,51 @@ dtype = {'Nome Stazione': 'object',
          'Metering Code': 'object',
          'Data e Ora': 'object',
          'Energia A+/- R+/-': 'object',
-         'Valore': 'float32',
+         'Valore': 'float64',
          'Dimensione kW/kVar': 'object',
-         'Indice': 'int32',
-         'Fattore': 'float32',
-         'Abbonato': 'float32'}
+         'Indice': 'int64',
+         'Fattore': 'object',
+         'Abbonato': 'float64'}
 
-df = pd.read_csv(nome_csv,
-                 sep=';',
-                 header=None,
-                 skiprows=1,
-                 decimal=',',
-                 names=nome_colonne,
-                 dtype=dtype)
+dask_df = dd.read_csv(nome_csv,
+                      sep=';',
+                      header=None,
+                      skiprows=1,
+                      decimal=',',
+                      names=nome_colonne,
+                      dtype=dtype)
 
-print(df.info())
-
-df["Fattore"] = df["Fattore"].fillna(1)
-df["Metering Code"] = df["Metering Code"].fillna("Valore non trovato")
-
-# -----------------------------------------------------------
-# ELABORAZIONE DATI PER FOGLIO 1 EXCEL
-
-# Trasforma la data in formato leggibile dal programma
-df["Data e Ora"] = pd.to_datetime(df["Data e Ora"],
-                                  dayfirst=True)
-
-df['Anno'] = df['Data e Ora'].dt.year
-df['Mese'] = df['Data e Ora'].dt.month
-df['Giorno'] = df['Data e Ora'].dt.day
-df['Orario'] = [d.time() for d in df['Data e Ora']]
-
-# Verifica delle tabelle create (scrivere sotto il df desiderato per verificarne la scrittura)
-writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
-df.to_excel(writer, 'Sheet1')
-writer.save()
-
-# Codice lettura completa degli utenti
 for i in [0, 1]:
     Variabile_utente = lista_utenti[i]
-    print(Variabile_utente)
-
     nome_excel = lista_excel[i]
-    print(nome_excel)
-    print()
 
+    df = dask_df[dask_df['Nome Stazione'] == Variabile_utente]
+    df = df.compute()
+
+    print(df.info())
+
+    df["Fattore"] = df["Fattore"].fillna(1)
+    df["Metering Code"] = df["Metering Code"].fillna("Valore non trovato")
+    df["Fattore"] = df["Fattore"].astype(str).astype(float)
+
+    # -----------------------------------------------------------
+    # ELABORAZIONE DATI PER FOGLIO 1 EXCEL
+
+    # Trasforma la data in formato leggibile dal programma
+    df["Data e Ora"] = pd.to_datetime(df["Data e Ora"],
+                                      dayfirst=True)
+
+    df['Anno'] = df['Data e Ora'].dt.year
+    df['Mese'] = df['Data e Ora'].dt.month
+    df['Giorno'] = df['Data e Ora'].dt.day
+    df['Orario'] = [d.time() for d in df['Data e Ora']]
+
+    # Verifica delle tabelle create (scrivere sotto il df desiderato per verificarne la scrittura)
+    writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
+    df.to_excel(writer, 'Sheet1')
+    writer.save()
+
+    # Codice lettura completa degli utenti
     # Codice necessario alla stesura del rapporto
     book = load_workbook(nome_excel)
     writer_a = pd.ExcelWriter(nome_excel,
