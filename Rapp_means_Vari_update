@@ -285,11 +285,13 @@ for i in [0, 1]:
                                       | (df_end_peak_off['Tempo'].dt.dayofweek == 6)]   # 6 = domenica
 
     df_peak_weekend_0 = df_peak_weekend
-    df_peak_weekend_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
+    df_peak_weekend_0['Valore'].astype(str).astype(float, errors='ignore')      # Necessario per somma
+
     df_0_weekend_off = df_peak_weekend_0
 
     if not df_0_weekend_off.empty:
-        df_peak_weekend_0 = pd.to_numeric(df_peak_weekend_0['Valore'], errors='coerce')     # Per somma Energia
+        # Per somma Energia
+        df_peak_weekend_0 = pd.to_numeric(df_peak_weekend_0['Valore'], errors='coerce')
         df_peak_weekend_0.index = pd.to_datetime(df_peak_weekend_0.index, errors='ignore')
 
         df_0_weekend_off.reset_index(level=0, inplace=True)
@@ -608,45 +610,12 @@ for i in [0, 1]:
 
     # -----------------------------------------------------------
     # ESPORTAZIONE DATI PANDAS -> EXCEL
-    data_mens_refill = {'a': [0],
-                        'b': [0]}
+    data_mens_refill = {'a': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        'b': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
     df_mens_refill = pd.DataFrame(data_mens_refill)
 
     df_mens_refill.to_excel(writer_a,
                             sheet_name='Sommario mensile', startrow=26, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=27, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=28, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=29, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=30, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=31, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=32, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=33, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=34, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=35, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=36, startcol=1,
-                            index=False, header=False)
-    df_mens_refill.to_excel(writer_a,
-                            sheet_name='Sommario mensile', startrow=37, startcol=1,
                             index=False, header=False)
 
     # Dati per il foglio 1 in Excel
