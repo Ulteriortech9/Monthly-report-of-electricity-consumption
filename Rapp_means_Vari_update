@@ -37,15 +37,17 @@ pd.options.mode.chained_assignment = None  # default='warn'
 nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
 
 # Inserire le path con i nomi dei file.xlsx
-lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx',
-               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx']
+lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Eni Suisse mapp-1418.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx']
 
 # Inserire i nomi nella lista utenti
-lista_utenti = ['Acquedotto mapp-1033',
-                'Delta']          # Terzo foglio
+lista_utenti = ['Eni Suisse mapp-1418',
+                'Delta',
+                'Acquedotto mapp-1033']          # Terzo foglio
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
-Variabile_mese = 2
+Variabile_mese = 3
 
 # Inserire l'anno desiderato
 Variabile_anno = 2021
@@ -82,7 +84,7 @@ dask_df = dd.read_csv(nome_csv,
                       names=nome_colonne,
                       dtype=dtype)
 
-for i in [0, 1]:
+for i in range(len(lista_utenti)):
     Variabile_utente = lista_utenti[i]
     nome_excel = lista_excel[i]
 
