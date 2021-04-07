@@ -36,7 +36,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # Inserire la path con il nome del file.csv
 nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
 
-# Inserire le path con i nomi dei file.xlsx
+# Inserire le path con i nomi dei file.xlsx (questi saranno i file di rapporto)
 lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-1033.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Delta.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Eni Suisse mapp-1418.xlsx',
@@ -57,8 +57,19 @@ lista_excel = ['D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Acquedotto mapp-10
                North Face LAVEGGIO 4.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Protezione Civile Mendrisiotto mapp.787.xlsx',
                'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Scuole Elementari mapp.961.xlsx',
-               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\SS Gerrette.xlsx']
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\SS Gerrette.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\SS Punto Franco.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Vini Bee.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Tecnomatic - 1410.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Tecnomec.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Total Capsule Solutions.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\WM_Wrapping-mapp.2438.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Asilo via Luvee SOLARE.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\BC Swiss SOLARE.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Magazzino UTC_SOLARE.xlsx',
+               'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Tarchini SOLARE.xlsx']
 
+# Inserire il nome e la path del file excel template (il foglio sarà riempito dal programma)
 template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
@@ -108,8 +119,11 @@ for i in range(len(df_nome)):
     Variabile_utente = df_nome[i]
     nome_excel = lista_excel[i]
 
-    df = dask_df[dask_df['Nome Stazione'] == Variabile_utente]
-    df = df.compute()
+    df_no_risk = dask_df[dask_df['Nome Stazione'] == Variabile_utente]
+    df_risk = dask_df[(dask_df['Nome Stazione'] == Variabile_utente)
+                      & (dask_df['Valore'] != 0)
+                      & (dask_df['Indice'] == 0)]
+    df = df_risk.compute()
 
     print()
     print(df.info())
@@ -149,6 +163,28 @@ for i in range(len(df_nome)):
     df_sez_utente = df[(df["Nome Stazione"] == Variabile_utente)
                        & (df["Mese"] == Variabile_mese)
                        & (df["Anno"] == Variabile_anno)]
+
+    if df_sez_utente.empty:
+        df = df_no_risk
+        df = df.compute()
+
+        df["Fattore"] = df["Fattore"].fillna(1)
+        df["Metering Code"] = df["Metering Code"].fillna("Valore non trovato")
+        df["Fattore"] = df["Fattore"].astype(str).astype(float)
+
+        df["Data e Ora"] = pd.to_datetime(df["Data e Ora"],
+                                          dayfirst=True)
+
+        df['Anno'] = df['Data e Ora'].dt.year
+        df['Mese'] = df['Data e Ora'].dt.month
+        df['Giorno'] = df['Data e Ora'].dt.day
+        df['Orario'] = [d.time() for d in df['Data e Ora']]
+
+        # Prendo in esame l'utente selezionato
+        df_sez_utente = df[(df["Nome Stazione"] == Variabile_utente)
+                           & (df["Mese"] == Variabile_mese)
+                           & (df["Anno"] == Variabile_anno)]
+
     df_sez_utente['Valore'] = df_sez_utente['Valore'] / df_sez_utente['Fattore']
 
     df_utente = df_sez_utente.loc[df_sez_utente['Nome Stazione']
