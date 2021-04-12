@@ -1,0 +1,174 @@
+# -----------------------------------------------------------
+# Progrmma in grado di cercare tra una lista fornita di utenti
+# i file excel prodotti dal lettore di contatore elettrico e
+# inviare i dati completi via mail alle persone interessate
+# (presenti nella lista e presenti nella lettura del contatore)
+#
+# (C) 2021 Simone Varischetti, Stabio, Svizzera
+# email: simon.varischetti@gmail.com
+#
+# Se file python aperto per la prima volta, andare
+# sul terminale e digitate i seguenti codici :
+#
+# pip install pandas
+# pip install openpyxl
+# pip install dask[complete]
+#
+# SOLO IN CASO DI MANUTENZIONE INSTALLARE ANCHE:
+# pip install xlsxwriter
+# pip install Datetime
+# pip install xlwt
+# -----------------------------------------------------------
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+import pandas as pd
+import dask.dataframe as dd
+from pandas import ExcelWriter
+pd.options.mode.chained_assignment = None  # default='warn'
+
+# -----------------------------------------------------------
+# SEZIONE UTENTE
+
+# Inserire la path con il nome del file.csv contenente i valori dei contatori
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
+
+# Inserire la path con il nome del file.csv contenente la lista completa degli utenti
+nome_lista_utenti = 'D:\RAPPORTO_MENSILE\RAPP_mensile\lista_utenti_aggiornata.csv'
+
+# Inserire la mail del mittente
+mail_mittente = 'simonev459@gmail.com'
+
+# -----------------------------------------------------------
+
+# Inserire la password per utilizzare l'account gmail
+password = input("Digitare la password gmail nella finestra 'run' e premere invio: ")
+
+nome_colonne = ['Nome Stazione',
+                'Metering Code',
+                'Data e Ora',
+                'Energia A+/- R+/-',
+                'Valore',
+                'Dimensione kW/kVar',
+                'Indice',
+                'Fattore',
+                'Abbonato']
+
+dtype = {'Nome Stazione': 'object',
+         'Metering Code': 'object',
+         'Data e Ora': 'object',
+         'Energia A+/- R+/-': 'object',
+         'Valore': 'float64',
+         'Dimensione kW/kVar': 'object',
+         'Indice': 'int64',
+         'Fattore': 'object',
+         'Abbonato': 'float64'}
+
+dask_df = dd.read_csv(nome_csv,
+                      sep=';',
+                      header=None,
+                      skiprows=1,
+                      decimal=',',
+                      names=nome_colonne,
+                      dtype=dtype)
+
+dask_df["Fattore"] = dask_df["Fattore"].astype(str).astype(float)
+df = dask_df.compute()
+df_nome = df["Nome Stazione"]
+df_nome.drop_duplicates(keep="first", inplace=True)
+df_nome_lista = df_nome.tolist()
+var_nome = df_nome.iloc[1]
+
+writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_utenti.xlsx")
+df_nome.to_excel(writer, 'Sheet1')
+writer.save()
+
+# -----------------------------------------------------------
+# NEL CASO FOSSE NECESSARIA UNA VERIFICA
+
+for x in range(len(df_nome_lista)):
+    var_nome = df_nome.iloc[x]
+    var_ind = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
+    var_fin = var_ind + "\\" + var_nome + ".xlsx"
+    lista_lista = "'" + var_nome + "'" + ","
+    lista_mail = "'" + "simonev459@gmail.com" + "'" + ","
+    lista_nomi = "'" + "NOME_NOME" + "'" + ","
+    lista_sesso = "'" + "M" + "'" + ","
+
+    # print(lista_sesso)
+    # print(lista_nomi)
+    # print(lista_mail)
+    # print(var_fin)
+
+# -----------------------------------------------------------
+# ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
+
+mittente = mail_mittente
+data_csv_destinatari = pd.read_csv(nome_lista_utenti)
+
+# print(data_csv_destinatari)
+print()
+
+for x in range(len(df_nome_lista)):
+    nome_1 = df_nome.iloc[x]
+    var_ind = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
+    var_fin = var_ind + "\\" + nome_1 + ".xlsx"
+
+    df_utente_sele = data_csv_destinatari[data_csv_destinatari['Nome_utente'] == nome_1]
+
+    if not df_utente_sele.empty:
+        mail_utente_sele = df_utente_sele['mail_utente'].iloc[0]
+        print("Utente selezionato:", nome_1)
+        print("Percorso del file da inviare: \n ", var_fin)
+        print("Mail dell'utente:", mail_utente_sele)
+        print()
+
+        nome_utente_sele = df_utente_sele['Nome_destin'].iloc[0]
+
+        msg = MIMEMultipart()
+        msg['From'] = mittente
+        msg['To'] = ", ".join(mail_utente_sele)
+        msg['Subject'] = "Rapporto mensile consumo elettrico"
+        # password_gmail = input("Digitare la password del proprio indirizzo gmail:")
+
+        if df_utente_sele['Sesso_M/F'].iloc[0] == 'M':
+            Testo_mail_s = "Egregio Signor " + nome_utente_sele + ", \n"
+        elif df_utente_sele['Sesso_M/F'].iloc[0] == 'F':
+            Testo_mail_s = "Gentile Signora " + nome_utente_sele + ", \n"
+
+        testo_init = "In allegato trova il rapporto mensile dei vostri consumi elettrici su base oraria. \n \n" \
+                     "I dati contenuti nel rapporto si discostano da quelli della fatturazione a causa del " \
+                     "leggero sfasamento che vi è tra il nostro sistema di rilevamento e quello ufficiale " \
+                     "del nostro partner (AET). \n \n" \
+                     "I dati per la fatturazione sono determinati dal sistema ufficiale. \n" \
+                     "Nel caso non desiderate ricevere il rapporto o volete aggiungere altre persone, vi " \
+                     "preghiamo di comunicarcelo. \n \n \n" \
+                     "Rimango a vostra disposizione per eventuali domande. \n \n" \
+                     "Cordiali saluti, \nG. Pontarolo \n \n \n--- \nGianpaolo Pontarolo \n" \
+                     "dipl. El. Ing. ETH / lic. oec. pupl. \nDirettore AMS \n" \
+                     "via rognano 6 / 6855 Stabio / +41 91 647 20 73 / +41 79 460 0905 / " \
+                     "gianpaolo.pontarolo@stabio.ch"
+
+        Testo_mail = Testo_mail_s + testo_init
+
+        msg.attach(MIMEText(Testo_mail, 'plain'))
+        filename = "Rapporto_mensile.xlsx"
+        attachment = open(var_fin, "rb")
+
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+        msg.attach(part)
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.ehlo()
+        server.login(mittente, password)  # inserire password account gmail
+        text = msg.as_string()
+        server.sendmail(mittente, mail_utente_sele, text)
+
+server.quit()
