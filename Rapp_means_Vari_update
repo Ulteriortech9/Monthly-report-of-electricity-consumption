@@ -33,7 +33,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # Inserire la path con il nome del file.csv
 # nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
 # nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_163122_rapporto_curva_2020.csv'
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\ANOYFILL_TEST.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapelli_test_2020.csv'
 
 # Inserire il nome e la path del file excel template (il foglio sarà riempito dal programma)
 template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
@@ -160,7 +160,8 @@ for i in range(len(df_nome)):
                            & (df["Mese"] == Variabile_mese)
                            & (df["Anno"] == Variabile_anno)]
 
-    df_sez_utente['Valore'] = df_sez_utente['Valore'] / df_sez_utente['Fattore']
+    # df_sez_utente['Valore'] = (df_sez_utente['Valore'] / 4) * df_sez_utente['Fattore']
+    df_sez_utente['Valore'] = (df_sez_utente['Valore'] / 4) * df_sez_utente['Fattore']
 
     df_utente = df_sez_utente.loc[df_sez_utente['Nome Stazione']
                                   == Variabile_utente].iloc[0]  # Estraggo i dati dell'utente selez.
@@ -343,12 +344,12 @@ for i in range(len(df_nome)):
         energia_offpeak = df_peak_week_0.sum() + df_peak_weekend_0.sum()
         en_tot_mens = energia_peak + energia_offpeak
 
-        data_sommario_attiva = {'a': [en_tot_mens,
-                                      energia_peak,
-                                      energia_offpeak,
+        data_sommario_attiva = {'a': [en_tot_mens / fattore_1,
+                                      energia_peak / fattore_1,
+                                      energia_offpeak / fattore_1,
                                       "", "", "", "",
-                                      p_max_mens,
-                                      p_max, p_max_off,
+                                      (p_max_mens / fattore_1) * 4,
+                                      (p_max / fattore_1) * 4, (p_max_off / fattore_1) * 4,
                                       "", "", "", "",
                                       0, 0, 0],
                                 'b': ['kWh',
@@ -391,91 +392,91 @@ for i in range(len(df_nome)):
 
     # Riassunto mensile completo:
     tab_utente = df[df["Nome Stazione"] == Variabile_utente]
-    tab_utente["Valore"] = tab_utente["Valore"] / tab_utente["Fattore"]
+    tab_utente["Valore"] = tab_utente["Valore"]     # * tab_utente["Fattore"]
     tab_utente = tab_utente.loc[(tab_utente["Valore"] != '0')
                                 & (tab_utente["Energia A+/- R+/-"] == "A+")
                                 & (tab_utente["Indice"] == 0)
                                 & (tab_utente["Anno"] == Variabile_anno)]
 
     tab_utente_gen = tab_utente.loc[tab_utente["Mese"] == 1]
-    en_gen = tab_utente_gen["Valore"].sum()
+    en_gen = tab_utente_gen["Valore"].sum() / 4
     p_gen = tab_utente_gen["Valore"].max()
     data_gen = {'a': [en_gen],
                 'b': [p_gen]}
     df_gen = pd.DataFrame(data_gen)
 
     tab_utente_feb = tab_utente.loc[tab_utente["Mese"] == 2]
-    en_feb = tab_utente_feb["Valore"].sum()
+    en_feb = tab_utente_feb["Valore"].sum() / 4
     p_feb = tab_utente_feb["Valore"].max()
     data_feb = {'a': [en_feb],
                 'b': [p_feb]}
     df_feb = pd.DataFrame(data_feb)
 
     tab_utente_mar = tab_utente.loc[tab_utente["Mese"] == 3]
-    en_mar = tab_utente_mar["Valore"].sum()
+    en_mar = tab_utente_mar["Valore"].sum() / 4
     p_mar = tab_utente_mar["Valore"].max()
     data_mar = {'a': [en_mar],
                 'b': [p_mar]}
     df_mar = pd.DataFrame(data_mar)
 
     tab_utente_apr = tab_utente.loc[tab_utente["Mese"] == 4]
-    en_apr = tab_utente_apr["Valore"].sum()
+    en_apr = tab_utente_apr["Valore"].sum() / 4
     p_apr = tab_utente_apr["Valore"].max()
     data_apr = {'a': [en_apr],
                 'b': [p_apr]}
     df_apr = pd.DataFrame(data_apr)
 
     tab_utente_mag = tab_utente.loc[tab_utente["Mese"] == 5]
-    en_mag = tab_utente_mag["Valore"].sum()
+    en_mag = tab_utente_mag["Valore"].sum() / 4
     p_mag = tab_utente_mag["Valore"].max()
     data_mag = {'a': [en_mag],
                 'b': [p_mag]}
     df_mag = pd.DataFrame(data_mag)
 
     tab_utente_giu = tab_utente.loc[tab_utente["Mese"] == 6]
-    en_giu = tab_utente_giu["Valore"].sum()
+    en_giu = tab_utente_giu["Valore"].sum() / 4
     p_giu = tab_utente_giu["Valore"].max()
     data_giu = {'a': [en_giu],
                 'b': [p_giu]}
     df_giu = pd.DataFrame(data_giu)
 
     tab_utente_lug = tab_utente.loc[tab_utente["Mese"] == 7]
-    en_lug = tab_utente_lug["Valore"].sum()
+    en_lug = tab_utente_lug["Valore"].sum() / 4
     p_lug = tab_utente_lug["Valore"].max()
     data_lug = {'a': [en_lug],
                 'b': [p_lug]}
     df_lug = pd.DataFrame(data_lug)
 
     tab_utente_ago = tab_utente.loc[tab_utente["Mese"] == 8]
-    en_ago = tab_utente_ago["Valore"].sum()
+    en_ago = tab_utente_ago["Valore"].sum() / 4
     p_ago = tab_utente_ago["Valore"].max()
     data_ago = {'a': [en_ago],
                 'b': [p_ago]}
     df_ago = pd.DataFrame(data_ago)
 
     tab_utente_set = tab_utente.loc[tab_utente["Mese"] == 9]
-    en_set = tab_utente_set["Valore"].sum()
+    en_set = tab_utente_set["Valore"].sum() / 4
     p_set = tab_utente_set["Valore"].max()
     data_set = {'a': [en_set],
                 'b': [p_set]}
     df_set = pd.DataFrame(data_set)
 
     tab_utente_ott = tab_utente.loc[tab_utente["Mese"] == 10]
-    en_ott = tab_utente_ott["Valore"].sum()
+    en_ott = tab_utente_ott["Valore"].sum() / 4
     p_ott = tab_utente_ott["Valore"].max()
     data_ott = {'a': [en_ott],
                 'b': [p_ott]}
     df_ott = pd.DataFrame(data_ott)
 
     tab_utente_nov = tab_utente.loc[tab_utente["Mese"] == 11]
-    en_nov = tab_utente_nov["Valore"].sum()
+    en_nov = tab_utente_nov["Valore"].sum() / 4
     p_nov = tab_utente_nov["Valore"].max()
     data_nov = {'a': [en_nov],
                 'b': [p_nov]}
     df_nov = pd.DataFrame(data_nov)
 
     tab_utente_dic = tab_utente.loc[tab_utente["Mese"] == 12]
-    en_dic = tab_utente_dic["Valore"].sum()
+    en_dic = tab_utente_dic["Valore"].sum() / 4
     p_dic = tab_utente_dic["Valore"].max()
     data_dic = {'a': [en_dic],
                 'b': [p_dic]}
@@ -523,14 +524,11 @@ for i in range(len(df_nome)):
         data_q_max_1_off = data_q_max_off.iloc[0]
 
     # Determino il valore di potenza reattiva maggiore fra il valore di peak e di off peak
-        if q_max > q_max_off:
-            q_max_mens = q_max
-        else:
-            q_max_mens = q_max_off
+        q_max_mens = q_max + q_max_off
 
-        data_sommario_reattiva = {'a': [q_max_mens,
-                                        q_max,
-                                        q_max_off],
+        data_sommario_reattiva = {'a': [(q_max_mens / fattore_1),
+                                        (q_max / fattore_1),
+                                        (q_max_off / fattore_1)],
                                   'b': ['kVar',
                                         'kVar',
                                         'kVar']}
@@ -543,6 +541,7 @@ for i in range(len(df_nome)):
     df_tab = df_sez_utente_attiva
     df_tab = df_tab[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
     df_tab['Valore'] = pd.to_numeric(df_tab['Valore'], errors='coerce')
+    df_tab['Valore'] = df_tab['Valore'] / fattore_1
 
     df_sum = df_tab.resample('1H').sum()
     df_sum['Data'] = [d.date() for d in df_sum.index]
@@ -563,6 +562,7 @@ for i in range(len(df_nome)):
     df_tab_re = df_sez_utente_reattiva
     df_tab_re = df_tab_re[['Nome Stazione', 'Energia A+/- R+/-', 'Valore', 'Tempo']]
     df_tab_re['Valore'] = pd.to_numeric(df_tab_re['Valore'], errors='coerce')
+    df_tab_re['Valore'] = df_tab_re['Valore'] / fattore_1
 
     df_sum_re = df_tab_re.resample('1H').sum()
     df_sum_re['Data'] = [d.date() for d in df_sum_re.index]
@@ -656,45 +656,42 @@ for i in range(len(df_nome)):
                                           header=False)
 
     # Dati per il foglio 3 in Excel
-    df_refill = pd.DataFrame(np.zeros((31, 24)),
-                             index=['---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---',
-                                    '---', '---', '---', '---'])
+    new_index = ['---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---',
+                 '---', '---', '---', '---']
+    df_refill_0 = pd.DataFrame(np.zeros((31, 24)),
+                               index=new_index)
+
+    df_refill = pd.DataFrame('---',
+                             index=new_index,
+                             columns=np.arange(len(df_refill_0.columns)))
+
     # Tabella di 0 che pulisce le tabelle A+ e R+
+    df_refill.to_excel(writer_a,
+                       sheet_name='Tabella oraria A+',
+                       startrow=2)
 
     if not df_tab.empty:
-        df_refill.to_excel(writer_a,
-                           sheet_name='Tabella oraria A+',
-                           startrow=2)
-
         df_sum_tab.to_excel(writer_a,
                             sheet_name='Tabella oraria A+',
                             startrow=2)
-    else:
-        df_refill.to_excel(writer_a,
-                           sheet_name='Tabella oraria A+',
-                           startrow=1)
 
     # Dati per il foglio 4 in Excel
-    if not df_tab_re.empty:
-        df_refill.to_excel(writer_a,
-                           sheet_name='Tabella oraria R+',
-                           startrow=2)
+    df_refill.to_excel(writer_a,
+                       sheet_name='Tabella oraria R+',
+                       startrow=2)
 
+    if not df_tab_re.empty:
         df_sum_tab_Re.to_excel(writer_a,
                                sheet_name='Tabella oraria R+',
                                startrow=2)
-    else:
-        df_refill.to_excel(writer_a,
-                           sheet_name='Tabella oraria R+',
-                           startrow=2)
 
     writer_a.save()
     t2 = perf_counter()
