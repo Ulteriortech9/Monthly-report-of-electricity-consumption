@@ -1,7 +1,8 @@
 # -----------------------------------------------------------
 # Lettore di contatore elettrico in  grado di estrapolare
-# informazioni su un determinato utente in un determinato
-# mese e di riportare i dati consultati su un foglio Excel
+# informazioni su una lista d'utenti annuale. Mostra inoltre
+# i valori precisi per un determinato mese e di riportare i
+# dati consultati su un foglio Excel
 #
 # (C) 2021 Simone Varischetti, Stabio, Svizzera
 # email: simon.varischetti@gmail.com
@@ -14,13 +15,8 @@
 # pip install openpyxl
 # pip install xlsxwriter
 # pip install Datetime
+# pip install dask[complete]
 # -----------------------------------------------------------
-
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
 
 import numpy as np
 import pandas as pd
@@ -35,7 +31,9 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
+# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
+# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_163122_rapporto_curva_2020.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\ANOYFILL_TEST.csv'
 
 # Inserire il nome e la path del file excel template (il foglio sarà riempito dal programma)
 template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
@@ -44,13 +42,13 @@ template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
 nome_path_file_out = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
-Variabile_mese = 12
+Variabile_mese = 2
 
 # Inserire l'anno desiderato
 Variabile_anno = 2020
 
 # -----------------------------------------------------------
-# ESPORTAZIONE DATI CSV -> PANDAS
+# ESPORTAZIONE DATI CSV -> DASK -> PANDAS
 
 # Lettura del file.csv
 nome_colonne = ['Nome Stazione',
@@ -165,10 +163,11 @@ for i in range(len(df_nome)):
     df_sez_utente['Valore'] = df_sez_utente['Valore'] / df_sez_utente['Fattore']
 
     df_utente = df_sez_utente.loc[df_sez_utente['Nome Stazione']
-                                  == Variabile_utente].iloc[0]   # Estraggo i dati dell'utente selez.
+                                  == Variabile_utente].iloc[0]  # Estraggo i dati dell'utente selez.
 
     # Prendo il nome utente
     nome_1 = df_utente.iloc[0]                                  # Variabile per identificare il nome utente
+
     # Prendo il Metering Code
     code_1 = df_utente.iloc[1]                                  # Variabile per identificare il Metering Code
 
@@ -210,6 +209,7 @@ for i in range(len(df_nome)):
     if fattore_1 == 1:
         fattore_1 = "Valore non trovato"
 
+# Tabella riassuntiva per foglio 1
     df_tab_utente = pd.DataFrame([df_utente.iloc[0],
                                   abbonato_1,
                                   "",
@@ -367,109 +367,10 @@ for i in range(len(df_nome)):
                                       "", "", "", "", "", "", ""]}
         df_tab_sommario_attiva = pd.DataFrame(data_sommario_attiva)
 
-        # Riassunto mensile completo:
-        tab_utente = df[df["Nome Stazione"] == Variabile_utente]
-        tab_utente["Valore"] = tab_utente["Valore"] / tab_utente["Fattore"]
-        tab_utente = tab_utente.loc[(tab_utente["Valore"] != '0')
-                                    & (tab_utente["Energia A+/- R+/-"] == "A+")
-                                    & (tab_utente["Indice"] == 0)
-                                    & (tab_utente["Anno"] == Variabile_anno)]
-
-        tab_utente_gen = tab_utente.loc[tab_utente["Mese"] == 1]
-        en_gen = tab_utente_gen["Valore"].sum()
-        p_gen = tab_utente_gen["Valore"].max()
-        data_gen = {'a': [en_gen],
-                    'b': [p_gen]}
-        df_gen = pd.DataFrame(data_gen)
-
-        tab_utente_feb = tab_utente.loc[tab_utente["Mese"] == 2]
-        en_feb = tab_utente_feb["Valore"].sum()
-        p_feb = tab_utente_feb["Valore"].max()
-        data_feb = {'a': [en_feb],
-                    'b': [p_feb]}
-        df_feb = pd.DataFrame(data_feb)
-
-        tab_utente_mar = tab_utente.loc[tab_utente["Mese"] == 3]
-        en_mar = tab_utente_mar["Valore"].sum()
-        p_mar = tab_utente_mar["Valore"].max()
-        data_mar = {'a': [en_mar],
-                    'b': [p_mar]}
-        df_mar = pd.DataFrame(data_mar)
-
-        tab_utente_apr = tab_utente.loc[tab_utente["Mese"] == 4]
-        en_apr = tab_utente_apr["Valore"].sum()
-        p_apr = tab_utente_apr["Valore"].max()
-        data_apr = {'a': [en_apr],
-                    'b': [p_apr]}
-        df_apr = pd.DataFrame(data_apr)
-
-        tab_utente_mag = tab_utente.loc[tab_utente["Mese"] == 5]
-        en_mag = tab_utente_mag["Valore"].sum()
-        p_mag = tab_utente_mag["Valore"].max()
-        data_mag = {'a': [en_mag],
-                    'b': [p_mag]}
-        df_mag = pd.DataFrame(data_mag)
-
-        tab_utente_giu = tab_utente.loc[tab_utente["Mese"] == 6]
-        en_giu = tab_utente_giu["Valore"].sum()
-        p_giu = tab_utente_giu["Valore"].max()
-        data_giu = {'a': [en_giu],
-                    'b': [p_giu]}
-        df_giu = pd.DataFrame(data_giu)
-
-        tab_utente_lug = tab_utente.loc[tab_utente["Mese"] == 7]
-        en_lug = tab_utente_lug["Valore"].sum()
-        p_lug = tab_utente_lug["Valore"].max()
-        data_lug = {'a': [en_lug],
-                    'b': [p_lug]}
-        df_lug = pd.DataFrame(data_lug)
-
-        tab_utente_ago = tab_utente.loc[tab_utente["Mese"] == 8]
-        en_ago = tab_utente_ago["Valore"].sum()
-        p_ago = tab_utente_ago["Valore"].max()
-        data_ago = {'a': [en_ago],
-                    'b': [p_ago]}
-        df_ago = pd.DataFrame(data_ago)
-
-        tab_utente_set = tab_utente.loc[tab_utente["Mese"] == 9]
-        en_set = tab_utente_set["Valore"].sum()
-        p_set = tab_utente_set["Valore"].max()
-        data_set = {'a': [en_set],
-                    'b': [p_set]}
-        df_set = pd.DataFrame(data_set)
-
-        tab_utente_ott = tab_utente.loc[tab_utente["Mese"] == 10]
-        en_ott = tab_utente_ott["Valore"].sum()
-        p_ott = tab_utente_ott["Valore"].max()
-        data_ott = {'a': [en_ott],
-                    'b': [p_ott]}
-        df_ott = pd.DataFrame(data_ott)
-
-        tab_utente_nov = tab_utente.loc[tab_utente["Mese"] == 11]
-        en_nov = tab_utente_nov["Valore"].sum()
-        p_nov = tab_utente_nov["Valore"].max()
-        data_nov = {'a': [en_nov],
-                    'b': [p_nov]}
-        df_nov = pd.DataFrame(data_nov)
-
-        tab_utente_dic = tab_utente.loc[tab_utente["Mese"] == 12]
-        en_dic = tab_utente_dic["Valore"].sum()
-        p_dic = tab_utente_dic["Valore"].max()
-        data_dic = {'a': [en_dic],
-                    'b': [p_dic]}
-        df_dic = pd.DataFrame(data_dic)
-
-        data_riassunto = {'a': [en_tot_mens],
-                          'b': [p_max_mens]}
-        df_tab_riass = pd.DataFrame(data_riassunto)
-
     else:
-        data_sommario_attiva = {'a': [0,
-                                      0,
-                                      0,
+        data_sommario_attiva = {'a': [0, 0, 0,
                                       "", "", "", "",
-                                      0,
-                                      0, 0,
+                                      0, 0, 0,
                                       "", "", "", "",
                                       0, 0, 0],
                                 'b': ['kWh',
@@ -487,6 +388,98 @@ for i in range(len(df_nome)):
                                       "",
                                       "", "", "", "", "", "", ""]}
         df_tab_sommario_attiva = pd.DataFrame(data_sommario_attiva)
+
+    # Riassunto mensile completo:
+    tab_utente = df[df["Nome Stazione"] == Variabile_utente]
+    tab_utente["Valore"] = tab_utente["Valore"] / tab_utente["Fattore"]
+    tab_utente = tab_utente.loc[(tab_utente["Valore"] != '0')
+                                & (tab_utente["Energia A+/- R+/-"] == "A+")
+                                & (tab_utente["Indice"] == 0)
+                                & (tab_utente["Anno"] == Variabile_anno)]
+
+    tab_utente_gen = tab_utente.loc[tab_utente["Mese"] == 1]
+    en_gen = tab_utente_gen["Valore"].sum()
+    p_gen = tab_utente_gen["Valore"].max()
+    data_gen = {'a': [en_gen],
+                'b': [p_gen]}
+    df_gen = pd.DataFrame(data_gen)
+
+    tab_utente_feb = tab_utente.loc[tab_utente["Mese"] == 2]
+    en_feb = tab_utente_feb["Valore"].sum()
+    p_feb = tab_utente_feb["Valore"].max()
+    data_feb = {'a': [en_feb],
+                'b': [p_feb]}
+    df_feb = pd.DataFrame(data_feb)
+
+    tab_utente_mar = tab_utente.loc[tab_utente["Mese"] == 3]
+    en_mar = tab_utente_mar["Valore"].sum()
+    p_mar = tab_utente_mar["Valore"].max()
+    data_mar = {'a': [en_mar],
+                'b': [p_mar]}
+    df_mar = pd.DataFrame(data_mar)
+
+    tab_utente_apr = tab_utente.loc[tab_utente["Mese"] == 4]
+    en_apr = tab_utente_apr["Valore"].sum()
+    p_apr = tab_utente_apr["Valore"].max()
+    data_apr = {'a': [en_apr],
+                'b': [p_apr]}
+    df_apr = pd.DataFrame(data_apr)
+
+    tab_utente_mag = tab_utente.loc[tab_utente["Mese"] == 5]
+    en_mag = tab_utente_mag["Valore"].sum()
+    p_mag = tab_utente_mag["Valore"].max()
+    data_mag = {'a': [en_mag],
+                'b': [p_mag]}
+    df_mag = pd.DataFrame(data_mag)
+
+    tab_utente_giu = tab_utente.loc[tab_utente["Mese"] == 6]
+    en_giu = tab_utente_giu["Valore"].sum()
+    p_giu = tab_utente_giu["Valore"].max()
+    data_giu = {'a': [en_giu],
+                'b': [p_giu]}
+    df_giu = pd.DataFrame(data_giu)
+
+    tab_utente_lug = tab_utente.loc[tab_utente["Mese"] == 7]
+    en_lug = tab_utente_lug["Valore"].sum()
+    p_lug = tab_utente_lug["Valore"].max()
+    data_lug = {'a': [en_lug],
+                'b': [p_lug]}
+    df_lug = pd.DataFrame(data_lug)
+
+    tab_utente_ago = tab_utente.loc[tab_utente["Mese"] == 8]
+    en_ago = tab_utente_ago["Valore"].sum()
+    p_ago = tab_utente_ago["Valore"].max()
+    data_ago = {'a': [en_ago],
+                'b': [p_ago]}
+    df_ago = pd.DataFrame(data_ago)
+
+    tab_utente_set = tab_utente.loc[tab_utente["Mese"] == 9]
+    en_set = tab_utente_set["Valore"].sum()
+    p_set = tab_utente_set["Valore"].max()
+    data_set = {'a': [en_set],
+                'b': [p_set]}
+    df_set = pd.DataFrame(data_set)
+
+    tab_utente_ott = tab_utente.loc[tab_utente["Mese"] == 10]
+    en_ott = tab_utente_ott["Valore"].sum()
+    p_ott = tab_utente_ott["Valore"].max()
+    data_ott = {'a': [en_ott],
+                'b': [p_ott]}
+    df_ott = pd.DataFrame(data_ott)
+
+    tab_utente_nov = tab_utente.loc[tab_utente["Mese"] == 11]
+    en_nov = tab_utente_nov["Valore"].sum()
+    p_nov = tab_utente_nov["Valore"].max()
+    data_nov = {'a': [en_nov],
+                'b': [p_nov]}
+    df_nov = pd.DataFrame(data_nov)
+
+    tab_utente_dic = tab_utente.loc[tab_utente["Mese"] == 12]
+    en_dic = tab_utente_dic["Valore"].sum()
+    p_dic = tab_utente_dic["Valore"].max()
+    data_dic = {'a': [en_dic],
+                'b': [p_dic]}
+    df_dic = pd.DataFrame(data_dic)
 
     # -----------------------------------------------------------
     # ELABORAZIONE DATI PER FOGLIO 2 EXCEL (Potenza reattiva R+)
@@ -609,42 +602,6 @@ for i in range(len(df_nome)):
                                         index=False,
                                         header=False)
 
-        df_gen.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=26, startcol=1,
-                        index=False, header=False)
-        df_feb.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=27, startcol=1,
-                        index=False, header=False)
-        df_mar.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=28, startcol=1,
-                        index=False, header=False)
-        df_apr.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=29, startcol=1,
-                        index=False, header=False)
-        df_mag.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=30, startcol=1,
-                        index=False, header=False)
-        df_giu.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=31, startcol=1,
-                        index=False, header=False)
-        df_lug.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=32, startcol=1,
-                        index=False, header=False)
-        df_ago.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=33, startcol=1,
-                        index=False, header=False)
-        df_set.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=34, startcol=1,
-                        index=False, header=False)
-        df_ott.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=35, startcol=1,
-                        index=False, header=False)
-        df_nov.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=36, startcol=1,
-                        index=False, header=False)
-        df_dic.to_excel(writer_a,
-                        sheet_name='Sommario mensile', startrow=37, startcol=1,
-                        index=False, header=False)
     else:
         df_tab_sommario_attiva.to_excel(writer_a,
                                         sheet_name='Sommario mensile',
@@ -652,6 +609,43 @@ for i in range(len(df_nome)):
                                         startcol=1,
                                         index=False,
                                         header=False)
+
+    df_gen.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=26, startcol=1,
+                    index=False, header=False)
+    df_feb.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=27, startcol=1,
+                    index=False, header=False)
+    df_mar.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=28, startcol=1,
+                    index=False, header=False)
+    df_apr.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=29, startcol=1,
+                    index=False, header=False)
+    df_mag.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=30, startcol=1,
+                    index=False, header=False)
+    df_giu.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=31, startcol=1,
+                    index=False, header=False)
+    df_lug.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=32, startcol=1,
+                    index=False, header=False)
+    df_ago.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=33, startcol=1,
+                    index=False, header=False)
+    df_set.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=34, startcol=1,
+                    index=False, header=False)
+    df_ott.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=35, startcol=1,
+                    index=False, header=False)
+    df_nov.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=36, startcol=1,
+                    index=False, header=False)
+    df_dic.to_excel(writer_a,
+                    sheet_name='Sommario mensile', startrow=37, startcol=1,
+                    index=False, header=False)
 
     if not df_0_re.empty:
         df_tab_sommario_reattiva.to_excel(writer_a,
@@ -702,7 +696,7 @@ for i in range(len(df_nome)):
                            sheet_name='Tabella oraria R+',
                            startrow=2)
 
+    writer_a.save()
     t2 = perf_counter()
     print(t2 - t1)
     print("-----------------------------------------------------------")
-    writer_a.save()
