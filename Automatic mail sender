@@ -42,13 +42,13 @@ nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_163122_rapporto_curva_202
 nome_lista_utenti = 'D:\RAPPORTO_MENSILE\RAPP_mensile\lista_utenti_aggiornata.csv'
 
 # Inserire la mail del mittente
-mail_mittente = 'simonev459@gmail.com'
+mail_mittente = 'gianpaolo.pontarolo@stabio.ch'     # 'amstabio@mlt-systems.com'
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
-Variabile_mese = 2
+Variabile_mese = 3
 
 # Inserire l'anno desiderato
-Variabile_anno = 2020
+Variabile_anno = 2021
 # -----------------------------------------------------------
 
 # Inserire la password per utilizzare l'account gmail
@@ -135,7 +135,7 @@ writer.save()
 # ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
 
 # mittente = mail_mittente
-mittente = 'amstabio@mlt-systems.com'
+mittente = mail_mittente
 data_csv_destinatari = pd.read_csv(nome_lista_utenti)
 
 # print(data_csv_destinatari)
@@ -202,5 +202,8 @@ for x in range(len(df_nome_lista)):
             server.ehlo()
             text = msg.as_string()
             server.sendmail(mittente, lista_mail, text)
+
+            # Mail di verifica per ogni mail mandata
+            server.sendmail(mittente, mittente, text)
 
 server.quit()
