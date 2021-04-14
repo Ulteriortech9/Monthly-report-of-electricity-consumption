@@ -32,8 +32,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 # Inserire la path con il nome del file.csv
 # nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_163122_rapporto_curva_2020.csv'
-# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapelli_test_2020.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_162056_rapporto_curva_2021.csv'
 
 # Inserire il nome e la path del file excel template (il foglio sarà riempito dal programma)
 template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
@@ -42,10 +41,10 @@ template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
 nome_path_file_out = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
-Variabile_mese = 2
+Variabile_mese = 3
 
 # Inserire l'anno desiderato
-Variabile_anno = 2020
+Variabile_anno = 2021
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI CSV -> DASK -> PANDAS
@@ -752,25 +751,33 @@ for i in range(len(df_nome)):
                              index=new_index,
                              columns=np.arange(len(df_refill_0.columns)))
 
+    writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
+    df_refill.to_excel(writer, 'Sheet1', header=False)
+    writer.save()
+
     # Tabella di 0 che pulisce le tabelle A+ e R+
     df_refill.to_excel(writer_a,
                        sheet_name='Tabella oraria A+',
-                       startrow=2)
+                       startrow=3,
+                       header=False)
 
     if not df_tab.empty:
         df_sum_tab.to_excel(writer_a,
                             sheet_name='Tabella oraria A+',
-                            startrow=2)
+                            startrow=3,
+                            header=False)
 
     # Dati per il foglio 4 in Excel
     df_refill.to_excel(writer_a,
                        sheet_name='Tabella oraria R+',
-                       startrow=2)
+                       startrow=3,
+                       header=False)
 
     if not df_tab_re.empty:
         df_sum_tab_Re.to_excel(writer_a,
                                sheet_name='Tabella oraria R+',
-                               startrow=2)
+                               startrow=3,
+                               header=False)
 
     writer_a.save()
     t2 = perf_counter()
