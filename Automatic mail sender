@@ -123,7 +123,7 @@ nom_an = str(Variabile_anno)
 
 df_nome = df["Nome Stazione"]
 df_nome.drop_duplicates(keep="first", inplace=True)
-print(df_nome)
+# print(df_nome)
 df_nome_lista = df_nome.tolist()
 var_nome = df_nome.iloc[1]
 
@@ -134,7 +134,8 @@ writer.save()
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
 
-mittente = mail_mittente
+# mittente = mail_mittente
+mittente = 'amstabio@mlt-systems.com'
 data_csv_destinatari = pd.read_csv(nome_lista_utenti)
 
 # print(data_csv_destinatari)
@@ -143,25 +144,27 @@ print()
 for x in range(len(df_nome_lista)):
     nome_1 = df_nome.iloc[x]
     var_ind = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
-    var_fin = var_ind + "\\" + var_nome + "_" + mese_nom + "_" + nom_an + ".xlsx"
+    var_fin = var_ind + "\\" + nome_1 + "_" + mese_nom + "_" + nom_an + ".xlsx"
 
     df_utente_sele = data_csv_destinatari[data_csv_destinatari['Nome_utente'] == nome_1]
 
     if not df_utente_sele.empty:
         for y in range(len(df_utente_sele)):
             mail_utente_sele = df_utente_sele['mail_utente'].iloc[y]
+            lista_mail = [mail_utente_sele]
             nome_utente_sele = df_utente_sele['Nome_destin'].iloc[y]
+
             print("Stazione trovata:", nome_1)
             print("Nome destinatario:", nome_utente_sele)
             # print("Percorso del file da inviare: \n ", var_fin)
             print("Mail dell'utente:", mail_utente_sele)
+            print(var_fin)
             print()
 
             msg = MIMEMultipart()
             msg['From'] = mittente
-            msg['To'] = ", ".join(mail_utente_sele)
-            # msg['To'] = ", ".join(mail_utente_sele)
-            msg['Subject'] = "Rapporto mensile consumo elettrico " + mese_nom + "-" + nom_an + "-" + var_nome
+            msg['To'] = ", ".join(lista_mail)
+            msg['Subject'] = "Rapporto mensile consumo elettrico " + mese_nom + "-" + nom_an + "-" + nome_1
 
             if df_utente_sele['Sesso_M/F'].iloc[y] == 'M':
                 Testo_mail_s = "Egregio Signor " + nome_utente_sele + ", \n"
@@ -184,7 +187,7 @@ for x in range(len(df_nome_lista)):
             Testo_mail = Testo_mail_s + testo_init
 
             msg.attach(MIMEText(Testo_mail, 'plain'))
-            filename = var_nome + "_" + mese_nom + "_" + nom_an + ".xlsx"
+            filename = nome_1 + "_" + mese_nom + "_" + nom_an + ".xlsx"
             attachment = open(var_fin, "rb")
 
             part = MIMEBase('application', 'octet-stream')
@@ -193,10 +196,11 @@ for x in range(len(df_nome_lista)):
             part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
 
             msg.attach(part)
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server = smtplib.SMTP(host="smtp.mlt-systems.ch", port=25)
+            server.starttls()
+            server.login('amstabio@mlt-systems.com', '564r9NBPe3H')
             server.ehlo()
-            server.login(mittente, "porcellino")  # inserire password account gmail
             text = msg.as_string()
-            server.sendmail(mittente, mail_utente_sele, text)
+            server.sendmail(mittente, lista_mail, text)
 
 server.quit()
