@@ -1,7 +1,7 @@
 # -----------------------------------------------------------
-# Progrmma in grado di cercare tra una lista fornita di utenti
+# Programma in grado di cercare tra una lista fornita di utenti
 # i file excel prodotti dal lettore di contatore elettrico e
-# inviare i dati completi via mail alle persone interessate
+# inviare i dati completi via mail agli utenti interessati
 # (presenti nella lista e presenti nella lettura del contatore)
 #
 # (C) 2021 Simone Varischetti, Stabio, Svizzera
@@ -35,7 +35,8 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv contenente i valori dei contatori
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
+# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
+nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_163122_rapporto_curva_2020.csv'
 
 # Inserire la path con il nome del file.csv contenente la lista completa degli utenti
 nome_lista_utenti = 'D:\RAPPORTO_MENSILE\RAPP_mensile\lista_utenti_aggiornata.csv'
@@ -43,6 +44,11 @@ nome_lista_utenti = 'D:\RAPPORTO_MENSILE\RAPP_mensile\lista_utenti_aggiornata.cs
 # Inserire la mail del mittente
 mail_mittente = 'simonev459@gmail.com'
 
+# Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
+Variabile_mese = 2
+
+# Inserire l'anno desiderato
+Variabile_anno = 2020
 # -----------------------------------------------------------
 
 # Inserire la password per utilizzare l'account gmail
@@ -78,31 +84,52 @@ dask_df = dd.read_csv(nome_csv,
 
 dask_df["Fattore"] = dask_df["Fattore"].astype(str).astype(float)
 df = dask_df.compute()
+
+# Trasforma la data in formato leggibile dal programma
+df["Data e Ora"] = pd.to_datetime(df["Data e Ora"],
+                                  dayfirst=True)
+
+df['Anno'] = df['Data e Ora'].dt.year
+df['Mese'] = df['Data e Ora'].dt.month
+df['Giorno'] = df['Data e Ora'].dt.day
+df['Orario'] = [d.time() for d in df['Data e Ora']]
+
+if Variabile_mese == 1:
+    mese_nom = "Gennaio"
+elif Variabile_mese == 2:
+    mese_nom = "Febbraio"
+elif Variabile_mese == 3:
+    mese_nom = "Marzo"
+elif Variabile_mese == 4:
+    mese_nom = "Aprile"
+elif Variabile_mese == 5:
+    mese_nom = "Maggio"
+elif Variabile_mese == 6:
+    mese_nom = "Giugno"
+elif Variabile_mese == 7:
+    mese_nom = "Luglio"
+elif Variabile_mese == 8:
+    mese_nom = "Agosto"
+elif Variabile_mese == 9:
+    mese_nom = "Settembre"
+elif Variabile_mese == 10:
+    mese_nom = "Ottobre"
+elif Variabile_mese == 11:
+    mese_nom = "Novembre"
+elif Variabile_mese == 12:
+    mese_nom = "Dicembre"
+
+nom_an = str(Variabile_anno)
+
 df_nome = df["Nome Stazione"]
 df_nome.drop_duplicates(keep="first", inplace=True)
+print(df_nome)
 df_nome_lista = df_nome.tolist()
 var_nome = df_nome.iloc[1]
 
 writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_utenti.xlsx")
 df_nome.to_excel(writer, 'Sheet1')
 writer.save()
-
-# -----------------------------------------------------------
-# NEL CASO FOSSE NECESSARIA UNA VERIFICA
-
-for x in range(len(df_nome_lista)):
-    var_nome = df_nome.iloc[x]
-    var_ind = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
-    var_fin = var_ind + "\\" + var_nome + ".xlsx"
-    lista_lista = "'" + var_nome + "'" + ","
-    lista_mail = "'" + "simonev459@gmail.com" + "'" + ","
-    lista_nomi = "'" + "NOME_NOME" + "'" + ","
-    lista_sesso = "'" + "M" + "'" + ","
-
-    # print(lista_sesso)
-    # print(lista_nomi)
-    # print(lista_mail)
-    # print(var_fin)
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
@@ -116,7 +143,7 @@ print()
 for x in range(len(df_nome_lista)):
     nome_1 = df_nome.iloc[x]
     var_ind = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
-    var_fin = var_ind + "\\" + nome_1 + ".xlsx"
+    var_fin = var_ind + "\\" + var_nome + "_" + mese_nom + "_" + nom_an + ".xlsx"
 
     df_utente_sele = data_csv_destinatari[data_csv_destinatari['Nome_utente'] == nome_1]
 
@@ -124,17 +151,17 @@ for x in range(len(df_nome_lista)):
         for y in range(len(df_utente_sele)):
             mail_utente_sele = df_utente_sele['mail_utente'].iloc[y]
             nome_utente_sele = df_utente_sele['Nome_destin'].iloc[y]
-            print("Utente selezionato:", nome_1)
-            print("Nome Destinatario:", nome_utente_sele)
-            print("Percorso del file da inviare: \n ", var_fin)
+            print("Stazione trovata:", nome_1)
+            print("Nome destinatario:", nome_utente_sele)
+            # print("Percorso del file da inviare: \n ", var_fin)
             print("Mail dell'utente:", mail_utente_sele)
             print()
 
             msg = MIMEMultipart()
             msg['From'] = mittente
             msg['To'] = ", ".join(mail_utente_sele)
-            msg['Subject'] = "Rapporto mensile consumo elettrico"
-            # password_gmail = input("Digitare la password del proprio indirizzo gmail:")
+            # msg['To'] = ", ".join(mail_utente_sele)
+            msg['Subject'] = "Rapporto mensile consumo elettrico " + mese_nom + "-" + nom_an + "-" + var_nome
 
             if df_utente_sele['Sesso_M/F'].iloc[y] == 'M':
                 Testo_mail_s = "Egregio Signor " + nome_utente_sele + ", \n"
@@ -157,7 +184,7 @@ for x in range(len(df_nome_lista)):
             Testo_mail = Testo_mail_s + testo_init
 
             msg.attach(MIMEText(Testo_mail, 'plain'))
-            filename = "Rapporto_mensile.xlsx"
+            filename = var_nome + "_" + mese_nom + "_" + nom_an + ".xlsx"
             attachment = open(var_fin, "rb")
 
             part = MIMEBase('application', 'octet-stream')
