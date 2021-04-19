@@ -1,0 +1,313 @@
+# -----------------------------------------------------------
+# Lettore dei registri AET per il consumo elettrico tramite
+# contatore. I dati mensili salvati su un file.csv vengono
+# analizzati tramite il programma, che  crea un altro
+# file.csv con i valori di potenza di peak, off-peak
+# punta massima e potenza reattiva. Gli altri
+# dati identificano l'utente (nome abbonato e numero
+# contatore) e la data in cui sono rilasciati.
+#
+# (C) 2021 Simone Varischetti, Stabio, Svizzera
+# email: simon.varischetti@gmail.com
+#
+# Se file python aperto per la prima volta, andare
+# sul terminale e digitate i seguenti codici :
+#
+# pip install pandas
+# pip install xlwt
+# pip install openpyxl
+# pip install xlsxwriter
+# pip install Datetime
+# pip install dask[complete]
+# -----------------------------------------------------------
+
+import numpy as np
+import pandas as pd
+import dask.dataframe as dd
+from time import perf_counter
+from pandas import ExcelWriter
+pd.options.mode.chained_assignment = None  # default='warn'
+
+# -----------------------------------------------------------
+# SEZIONE UTENTE
+
+# Inserire la path con il nome del file.csv dei valori mensili:
+nome_mensile_in = 'Q:' + '\\' + 'tmp' + '\\' + 'dati fatturazione' + '\\' \
+                  + '14042021_160818_CURVE_MENSILI' + '.csv'
+
+# Inserire la path con il nome del file.csv dei valori trimestrali:
+nome_trimens_in = 'Q:' + '\\' + 'tmp' + '\\' + 'dati fatturazione' + '\\' \
+                  + '14042021_160922_CURVE_TRIMESTRALI' + '.csv'
+
+# Inserire la path con il nome del file.csv d'uscita per i valori mensili:
+nome_mens_out = 'Q:' + '\\' + 'tmp' + '\\' + 'dati fatturazione' + '\\' + 'File_out' + '\\' \
+                + 'Registri_AET_Mensili' + '.csv'
+
+# Inserire la path con il nome del file.csv d'uscita per i valori mensili:
+nome_trim_out = 'Q:' + '\\' + 'tmp' + '\\' + 'dati fatturazione' + '\\' + 'File_out' + '\\' \
+                + 'Registri_AET_Trimestrali' + '.csv'
+
+# Inserire la path con il nome del file.csv contenente la lista utenti:
+lista_utenti = 'Q:' + '\\' + 'tmp' + '\\' + 'dati fatturazione' + '\\' + 'File_out' + '\\' \
+               + 'Lista_Utenti_Completa' + '.csv'
+
+# -----------------------------------------------------------
+# ESPORTAZIONE DATI CSV -> DASK -> PANDAS
+
+# Lettura del file.csv
+nome_colonne = ['Nome Abbonato',            # Da riportare
+                'Metering Code',
+                'Data e Ora',               # Da riportare
+                'Energia A+/- R+/-',
+                'Valore',                   # Da riportare
+                'Dimensione kW/kVar',
+                'Indice']
+
+dtype = {'Nome Abbonato': 'object',
+         'Metering Code': 'object',
+         'Data e Ora': 'object',
+         'Energia A+/- R+/-': 'object',
+         'Valore': 'float32',
+         'Dimensione kW/kVar': 'object',
+         'Indice': 'int32'}
+
+dask_df = dd.read_csv(nome_mensile_in,
+                      sep=';',
+                      header=None,
+                      skiprows=1,
+                      decimal=',',
+                      names=nome_colonne,
+                      dtype=dtype)
+
+df_to_list = dask_df.compute()
+df_abb = df_to_list['Nome Abbonato']
+df_abb.drop_duplicates(keep="first", inplace=True)
+df_abb = df_abb.tolist()
+
+# Lettura del file lista utenti
+col_lista_ut = ['Nome_Abbonato',
+                'Numero_Contatore']
+dtype_ut = {'Nome_Abbonato': 'object',
+            'Numero_Contatore': 'object'}
+
+data_csv_utenti = pd.read_csv(lista_utenti,
+                              sep=';',
+                              dtype=dtype_ut,
+                              names=col_lista_ut)
+
+# Creo una lista vuota che sarà riempita dai dati utente
+ad_empty = {'Data': [],
+            'Data e Ora': [],
+            'Abbonato': [],
+            'a': [],
+            'b': [],
+            '#Contatore': [],
+            'Peak': [],
+            'Off-peak': [],
+            'Punta': [],
+            'Reattiva': []}
+
+df_empty = pd.DataFrame(ad_empty)
+
+for i in range(len(df_abb)):
+    t1 = perf_counter()                                                 # Counter
+    variabile_abb = df_abb[i]                                           # Listaggio abbonati
+
+    df_no_risk = dask_df[dask_df['Nome Abbonato'] == variabile_abb]     # Lista con dati mancanti
+    df_risk = dask_df[(dask_df['Nome Abbonato'] == variabile_abb)       # Lista completa
+                      & (dask_df['Valore'] != 0)
+                      & (dask_df['Indice'] == 0)]
+    df = df_risk.compute()
+
+# -----------------------------------------------------------
+    # Elaborazione dati orari e nome utente selezionato
+
+    # Trasforma la data in formato leggibile dal programma
+    df["Data e Ora"] = pd.to_datetime(df["Data e Ora"],
+                                      dayfirst=True)
+
+    df['Anno'] = df['Data e Ora'].dt.year
+    df['Mese'] = df['Data e Ora'].dt.month
+    df['Giorno'] = df['Data e Ora'].dt.day
+    df['Orario'] = [d.time() for d in df['Data e Ora']]
+
+    # Verifica delle tabelle create (scrivere sotto il df desiderato per verificarne la scrittura)
+    writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
+    df.to_excel(writer, 'Sheet1')
+    writer.save()
+
+    # Nel caso ci fossero problemi di lettura: (DA COMPLETARE)
+    if df.empty:
+        df = df_no_risk
+        df = df.compute()
+        df.round(1)
+
+    df['Valore'] = df['Valore'] / 4
+    df['Valore'].round(1)
+
+    # Estrazione dei dati non calcolabili
+    df_utente = df.loc[df['Nome Abbonato']
+                       == variabile_abb].iloc[-1]       # Estrazione dati utente
+
+    nome_abbonato = df_utente.iloc[0]                   # Nome Abbonato
+    data_e_ora = df_utente.iloc[2]                      # Data e ora
+
+    # Estraggo la data
+    df_data = df
+    df_data = df_data.set_index('Data e Ora')
+    df_data['Tempo'] = df_data.index
+
+    df_sez_utente_tab = df_data.loc[(df_data["Valore"] != '0')
+                                    & (df_data["Indice"] == 0)]
+
+    df_data_val = df_data
+    df_data_val['Data'] = [d.date() for d in df_data_val.index]
+    df_data_val['Data'] = pd.to_datetime(df_data_val['Data']).dt.strftime('%d.%m.%Y')
+    df_data_val.reset_index(inplace=True)
+
+    df_utente_data = df_data_val.loc[df_data_val['Nome Abbonato']
+                                     == variabile_abb].iloc[-1]     # Estrazione dati utente
+    data_giorno = df_utente_data.iloc[12]                           # Data giornaliera
+
+    # Cerco il numero abbonato nella lista utenti
+    df_utente_sele = data_csv_utenti[data_csv_utenti['Nome_Abbonato'] == nome_abbonato]
+    if not df_utente_sele.empty:
+        nr_abbonato = df_utente_sele['Numero_Contatore'].iloc[0]
+    else:
+        nr_abbonato = "Valore non trovato"
+
+# -----------------------------------------------------------
+    # Calcolo delle potenze attive (A+)
+
+    df_sez_utente_attiva = df_sez_utente_tab.loc[(df_sez_utente_tab["Energia A+/- R+/-"] == "A+")]
+
+    df_sez_utente_reattiva = df_sez_utente_tab.loc[(df_sez_utente_tab["Energia A+/- R+/-"] == "R+")]
+
+    # Potenza massima
+    p_max = df_sez_utente_attiva['Valore'].max()
+
+    # Prendo in esame la potenza attiva di peak (dal lunedì al venerdì, dalle 08:00 alle 20:00)
+    df_peak_orari_peak = df_sez_utente_attiva.between_time('08:15', '20:00')
+    df_peak_orari_peak.index = pd.to_datetime(df_peak_orari_peak.index)
+
+    # Tabella oraria con valori di peak
+    df_peak = df_peak_orari_peak[(df_peak_orari_peak['Tempo'].dt.dayofweek == 0)    # 0 = lunedì
+                                 | (df_peak_orari_peak['Tempo'].dt.dayofweek == 1)
+                                 | (df_peak_orari_peak['Tempo'].dt.dayofweek == 2)
+                                 | (df_peak_orari_peak['Tempo'].dt.dayofweek == 3)
+                                 | (df_peak_orari_peak['Tempo'].dt.dayofweek == 4)]  # 4 = venerdì
+
+    df_peak['Valore'].astype(str).astype(float, errors='ignore')  # Necessario per la somma
+    df_0 = df_peak
+
+    if not df_0.empty:
+        df_peak_0 = pd.to_numeric(df_peak['Valore'], errors='coerce')  # Per somma Energia
+        df_peak_0.index = pd.to_datetime(df_peak.index, errors='ignore')
+
+        df_0.reset_index(level=0, inplace=True)
+        df_0 = df_0[['Data e Ora', 'Nome Abbonato', 'Energia A+/- R+/-', 'Valore']]
+        df_0['Data e Ora'] = pd.to_datetime(df_0['Data e Ora']).dt.strftime('%d.%m.%Y, %H:%M:%S')
+
+        p_sum_peak = df_0['Valore'].sum() / 4
+
+    # Prendo in esame la potenza attiva di off peak durante la settimana (dalle 20:15 alle 08:00 lun/ven)
+    df_week_peak_off = df_sez_utente_attiva.between_time('20:15', '08:00')
+    df_week_peak_off.index = pd.to_datetime(df_week_peak_off.index)
+
+    # Tabella oraria con valori di off-peak per la settimana
+    df_peak_week = df_week_peak_off[(df_week_peak_off['Tempo'].dt.dayofweek == 0)       # 1 = lunedì
+                                    | (df_week_peak_off['Tempo'].dt.dayofweek == 1)
+                                    | (df_week_peak_off['Tempo'].dt.dayofweek == 2)
+                                    | (df_week_peak_off['Tempo'].dt.dayofweek == 3)
+                                    | (df_week_peak_off['Tempo'].dt.dayofweek == 4)]     # 4 = venerdì
+
+    df_peak_week_0 = df_peak_week
+    df_peak_week_0['Valore'].astype(str).astype(float, errors='ignore')          # Necessario per la somma
+    df_0_week_off = df_peak_week_0
+
+    if not df_0_week_off.empty:
+        df_peak_week_0 = pd.to_numeric(df_peak_week_0['Valore'], errors='coerce')     # Per somma Energia
+        df_peak_week_0.index = pd.to_datetime(df_peak_week_0.index, errors='ignore')
+
+        df_0_week_off.reset_index(level=0, inplace=True)
+        df_0_week_off = df_0_week_off[['Data e Ora', 'Nome Abbonato', 'Energia A+/- R+/-', 'Valore']]
+        df_0_week_off['Data e Ora'] = pd.to_datetime(df_0_week_off['Data e Ora'])\
+            .dt.strftime('%d.%m.%Y, %H:%M:%S')
+
+        p_sum_off_week = df_0_week_off['Valore'].sum() / 4
+
+    # Prendo in esame la potenza attiva di off peak durante i weekend
+    df_end_peak_off = df_sez_utente_attiva
+    df_end_peak_off.index = pd.to_datetime(df_end_peak_off.index)
+
+    df_peak_weekend = df_end_peak_off[(df_end_peak_off['Tempo'].dt.dayofweek == 5)      # 5 = sabato
+                                      | (df_end_peak_off['Tempo'].dt.dayofweek == 6)]   # 6 = domenica
+
+    df_peak_weekend_0 = df_peak_weekend
+    df_peak_weekend_0['Valore'].astype(str).astype(float, errors='ignore')      # Necessario per somma
+
+    df_0_weekend_off = df_peak_weekend_0
+
+    if not df_0_weekend_off.empty:
+        # Per somma Energia
+        df_peak_weekend_0 = pd.to_numeric(df_peak_weekend_0['Valore'], errors='coerce')
+        df_peak_weekend_0.index = pd.to_datetime(df_peak_weekend_0.index, errors='ignore')
+
+        df_0_weekend_off.reset_index(level=0, inplace=True)
+        df_0_weekend_off = df_0_weekend_off[['Data e Ora', 'Nome Abbonato', 'Energia A+/- R+/-', 'Valore']]
+        df_0_weekend_off['Data e Ora'] = pd.to_datetime(df_0_weekend_off['Data e Ora'])\
+            .dt.strftime('%d.%m.%Y, %H:%M:%S')
+
+        p_sum_off_weekend = df_0_weekend_off['Valore'].sum() / 4
+
+    # Determino il valore di potenza maggiore di off peak tra la settimana ed il weekend
+        if p_sum_off_week > p_sum_off_weekend:
+            p_sum_off = p_sum_off_week
+        else:
+            p_sum_off = p_sum_off_weekend
+
+# -----------------------------------------------------------
+    # Calcolo della potenza reattiva (R+)
+
+    q_sum = df_sez_utente_reattiva['Valore'].sum()
+
+# -----------------------------------------------------------
+# Creazione della tabella da esportare
+    ad_stamp = {'Data':          [data_giorno],
+                'Data e Ora':    [data_e_ora],
+                'Abbonato':      [nome_abbonato],
+                'a':             [';'],
+                'b':             [';'],
+                '#Contatore':    [nr_abbonato],
+                'Peak':          [p_sum_peak],
+                'Off-peak':      [p_sum_off],
+                'Punta':         [p_max],
+                'Reattiva':      [q_sum]}
+
+    lista_uscita = [data_giorno,
+                    data_e_ora,
+                    nome_abbonato,
+                    '',
+                    '',
+                    nr_abbonato,
+                    p_sum_peak,
+                    p_sum_off,
+                    p_max,
+                    q_sum]
+    df_lista = pd.DataFrame(ad_stamp)
+
+    df_empty.loc[i] = lista_uscita
+    df_full = df_empty
+    df_full['Peak'] = df_full['Peak'].astype(float).round(2)
+    df_full['Off-peak'] = df_full['Off-peak'].astype(float).round(2)
+    df_full['Punta'] = df_full['Punta'].astype(float).round(2)
+    df_full['Reattiva'] = df_full['Reattiva'].astype(float).round(2)
+
+    print(df_full.info())
+    print(nome_abbonato)
+
+    df_full.to_csv(nome_mens_out,
+                   header=False,
+                   index=False,
+                   sep=';',
+                   decimal=',')
