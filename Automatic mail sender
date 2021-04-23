@@ -25,111 +25,47 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-
+import os
 import pandas as pd
 import dask.dataframe as dd
 from pandas import ExcelWriter
 pd.options.mode.chained_assignment = None  # default='warn'
 
+os.path.abspath("tmp\Report_mensili")
+
 # -----------------------------------------------------------
 # SEZIONE UTENTE
 
-# Inserire la path con il nome del file.csv contenente i valori dei contatori
-# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_163122_rapporto_curva_2020.csv'
-
 # Inserire la path con il nome del file.csv contenente la lista completa degli utenti
-nome_lista_utenti = 'D:\RAPPORTO_MENSILE\RAPP_mensile\lista_utenti_aggiornata.csv'
+nome_lista_utenti = '..\Lista_utenti' + '\\' +\
+                    'Lista_utenti' + '.csv'
+
+# Inserire la path con il nome del file.csv contenente i nomi da comparare alla lista utenti
+nome_excel = '..\Lista_utenti_out' + '\\' + \
+             'Lista_utenti_trovati' + '.xlsx'
 
 # Inserire la mail del mittente
 mail_mittente = 'gianpaolo.pontarolo@stabio.ch'     # 'amstabio@mlt-systems.com'
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
-Variabile_mese = 3
+Variabile_mese = 7
 
 # Inserire l'anno desiderato
-Variabile_anno = 2021
+Variabile_anno = 2020
 # -----------------------------------------------------------
 
 # Inserire la password per utilizzare l'account gmail
 # password = input("Digitare la password gmail nella finestra 'run' e premere invio: ")
-
-nome_colonne = ['Nome Stazione',
-                'Metering Code',
-                'Data e Ora',
-                'Energia A+/- R+/-',
-                'Valore',
-                'Dimensione kW/kVar',
-                'Indice',
-                'Fattore',
-                'Abbonato']
-
-dtype = {'Nome Stazione': 'object',
-         'Metering Code': 'object',
-         'Data e Ora': 'object',
-         'Energia A+/- R+/-': 'object',
-         'Valore': 'float64',
-         'Dimensione kW/kVar': 'object',
-         'Indice': 'int64',
-         'Fattore': 'object',
-         'Abbonato': 'float64'}
-
-dask_df = dd.read_csv(nome_csv,
-                      sep=';',
-                      header=None,
-                      skiprows=1,
-                      decimal=',',
-                      names=nome_colonne,
-                      dtype=dtype)
-
-dask_df["Fattore"] = dask_df["Fattore"].astype(str).astype(float)
-df = dask_df.compute()
-
-# Trasforma la data in formato leggibile dal programma
-df["Data e Ora"] = pd.to_datetime(df["Data e Ora"],
-                                  dayfirst=True)
-
-df['Anno'] = df['Data e Ora'].dt.year
-df['Mese'] = df['Data e Ora'].dt.month
-df['Giorno'] = df['Data e Ora'].dt.day
-df['Orario'] = [d.time() for d in df['Data e Ora']]
-
-if Variabile_mese == 1:
-    mese_nom = "Gennaio"
-elif Variabile_mese == 2:
-    mese_nom = "Febbraio"
-elif Variabile_mese == 3:
-    mese_nom = "Marzo"
-elif Variabile_mese == 4:
-    mese_nom = "Aprile"
-elif Variabile_mese == 5:
-    mese_nom = "Maggio"
-elif Variabile_mese == 6:
-    mese_nom = "Giugno"
-elif Variabile_mese == 7:
-    mese_nom = "Luglio"
-elif Variabile_mese == 8:
-    mese_nom = "Agosto"
-elif Variabile_mese == 9:
-    mese_nom = "Settembre"
-elif Variabile_mese == 10:
-    mese_nom = "Ottobre"
-elif Variabile_mese == 11:
-    mese_nom = "Novembre"
-elif Variabile_mese == 12:
-    mese_nom = "Dicembre"
-
-nom_an = str(Variabile_anno)
-
-df_nome = df["Nome Stazione"]
-df_nome.drop_duplicates(keep="first", inplace=True)
-# print(df_nome)
-df_nome_lista = df_nome.tolist()
-var_nome = df_nome.iloc[1]
-
-writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_utenti.xlsx")
-df_nome.to_excel(writer, 'Sheet1')
-writer.save()
+col_name = ['Nome stazione',
+            'Mese',
+            'Anno']
+df_utenti_trovati = pd.read_excel(nome_excel, names=col_name)
+df_nome_lista = df_utenti_trovati
+df_utenti_trovati['Anno'] = df_utenti_trovati['Anno'].astype(str)
+df_nome = df_utenti_trovati['Nome stazione']
+df_mese = df_utenti_trovati['Mese']
+print(type(df_mese))
+df_anno = df_utenti_trovati['Anno']
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI EXCEL -> MAIL UTENTI
@@ -143,7 +79,9 @@ print()
 
 for x in range(len(df_nome_lista)):
     nome_1 = df_nome.iloc[x]
-    var_ind = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
+    mese_nom = df_mese.iloc[x]
+    nom_an = df_anno.iloc[x]
+    var_ind = "..\Rapporti_out"
     var_fin = var_ind + "\\" + nome_1 + "_" + mese_nom + "_" + nom_an + ".xlsx"
 
     df_utente_sele = data_csv_destinatari[data_csv_destinatari['Nome_utente'] == nome_1]
@@ -198,7 +136,7 @@ for x in range(len(df_nome_lista)):
             msg.attach(part)
             server = smtplib.SMTP(host="smtp.mlt-systems.ch", port=25)
             server.starttls()
-            server.login('amstabio@mlt-systems.com', '564r9NBPe3H')
+            server.login('MAIL_PC', 'PASSWORD_MAIL')
             server.ehlo()
             text = msg.as_string()
             server.sendmail(mittente, lista_mail, text)
