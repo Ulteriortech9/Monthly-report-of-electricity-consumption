@@ -16,35 +16,41 @@
 # pip install xlsxwriter
 # pip install Datetime
 # pip install dask[complete]
+# pip install colorama
 # -----------------------------------------------------------
 
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
+import os
 from time import perf_counter
 from openpyxl import load_workbook
 from pandas import ExcelWriter
+from colorama import Fore, Style
 pd.options.mode.chained_assignment = None  # default='warn'
 
+os.path.abspath("tmp\Report_mensili")
 
 # -----------------------------------------------------------
 # SEZIONE UTENTE
 
 # Inserire la path con il nome del file.csv
-# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A29032021_120340_rapporto_curva.csv'
-nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_162056_rapporto_curva_2021.csv'
+# nome_csv = 'D:\RAPPORTO_MENSILE\RAPP_mensile\A12042021_162056_rapporto_curva_2021.csv'
+nome_csv = '..\Rapporti_mensili_in' + '\\' +\
+           '12042021_163122_rapporto_curva_2020' + '.csv'
 
 # Inserire il nome e la path del file excel template (il foglio sarà riempito dal programma)
-template_excel = 'D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out\Template_1.xlsx'
+template_excel = '..\Template_excel' + '\\' +\
+                 'Template_Report_mensili' + '.xlsx'
 
 # Inserire la path del file excel out (foglio riempito dal programma)
-nome_path_file_out = "D:\RAPPORTO_MENSILE\RAPP_mensile\Rapporti_out"
+nome_path_file_out = '..\Rapporti_out'
 
 # Inserire il mese desiderato (1 = gennaio, 12 = dicembre)
-Variabile_mese = 3
+Variabile_mese = 6
 
 # Inserire l'anno desiderato
-Variabile_anno = 2021
+Variabile_anno = 2020
 
 # -----------------------------------------------------------
 # ESPORTAZIONE DATI CSV -> DASK -> PANDAS
@@ -84,6 +90,49 @@ df_nome.drop_duplicates(keep="first", inplace=True)
 df_nome_excel = df_nome
 df_nome = df_nome.tolist()
 
+# Creo una tabella rapida per l'invio mail
+s_utenti = df_nome_excel
+df_utenti = s_utenti.to_frame()
+
+if Variabile_mese == 1:
+    var_mes = "Gennaio"
+elif Variabile_mese == 2:
+    var_mes = "Febbraio"
+elif Variabile_mese == 3:
+    var_mes = "Marzo"
+elif Variabile_mese == 4:
+    var_mes = "Aprile"
+elif Variabile_mese == 5:
+    var_mes = "Maggio"
+elif Variabile_mese == 6:
+    var_mes = "Giugno"
+elif Variabile_mese == 7:
+    var_mes = "Luglio"
+elif Variabile_mese == 8:
+    var_mes = "Agosto"
+elif Variabile_mese == 9:
+    var_mes = "Settembre"
+elif Variabile_mese == 10:
+    var_mes = "Ottobre"
+elif Variabile_mese == 11:
+    var_mes = "Novembre"
+elif Variabile_mese == 12:
+    var_mes = "Dicembre"
+
+df_utenti['Mese'] = var_mes
+df_utenti['Anno'] = Variabile_anno
+print(Fore.BLUE + "Tabella di comparazione:")
+print(Style.RESET_ALL)
+print(df_utenti)
+print()
+
+writer = ExcelWriter("..\Lista_utenti_out\Lista_utenti_trovati.xlsx")
+df_utenti.to_excel(writer,
+                       'Sheet1',
+                       header=None,
+                       index=None)
+writer.save()
+
 for i in range(len(df_nome)):
     t1 = perf_counter()
     Variabile_utente = df_nome[i]
@@ -99,7 +148,8 @@ for i in range(len(df_nome)):
     df = df_risk.compute()
 
     print(df.info())
-    print(Variabile_utente)
+    print(Fore.GREEN + Variabile_utente)
+    print(Style.RESET_ALL)
 
     df["Fattore"] = df["Fattore"].fillna(1)
     df["Metering Code"] = df["Metering Code"].fillna("Valore non trovato")
@@ -119,9 +169,9 @@ for i in range(len(df_nome)):
     df['Orario'] = [d.time() for d in df['Data e Ora']]
 
     # Verifica delle tabelle create (scrivere sotto il df desiderato per verificarne la scrittura)
-    writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
-    df.to_excel(writer, 'Sheet1')
-    writer.save()
+    # writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
+    # df.to_excel(writer, 'Sheet1')
+    # writer.save()
 
     # Codice lettura completa degli utenti
     # Prendo in esame l'utente selezionato
@@ -428,6 +478,9 @@ for i in range(len(df_nome)):
     tab_utente_gen = tab_utente.loc[tab_utente["Mese"] == 1]
     en_gen = tab_utente_gen["Valore"].sum() / 4
     p_gen = tab_utente_gen["Valore"].max()
+    if en_gen == 0.0:
+        en_gen = ''
+        p_gen = ''
     data_gen = {'a': [en_gen],
                 'b': [p_gen]}
     df_gen = pd.DataFrame(data_gen)
@@ -435,6 +488,9 @@ for i in range(len(df_nome)):
     tab_utente_feb = tab_utente.loc[tab_utente["Mese"] == 2]
     en_feb = tab_utente_feb["Valore"].sum() / 4
     p_feb = tab_utente_feb["Valore"].max()
+    if en_feb == 0.0:
+        en_feb = ''
+        p_feb = ''
     data_feb = {'a': [en_feb],
                 'b': [p_feb]}
     df_feb = pd.DataFrame(data_feb)
@@ -442,6 +498,9 @@ for i in range(len(df_nome)):
     tab_utente_mar = tab_utente.loc[tab_utente["Mese"] == 3]
     en_mar = tab_utente_mar["Valore"].sum() / 4
     p_mar = tab_utente_mar["Valore"].max()
+    if en_mar == 0.0:
+        en_mar = ''
+        p_mar = ''
     data_mar = {'a': [en_mar],
                 'b': [p_mar]}
     df_mar = pd.DataFrame(data_mar)
@@ -449,6 +508,9 @@ for i in range(len(df_nome)):
     tab_utente_apr = tab_utente.loc[tab_utente["Mese"] == 4]
     en_apr = tab_utente_apr["Valore"].sum() / 4
     p_apr = tab_utente_apr["Valore"].max()
+    if en_apr == 0.0:
+        en_apr = ''
+        p_apr = ''
     data_apr = {'a': [en_apr],
                 'b': [p_apr]}
     df_apr = pd.DataFrame(data_apr)
@@ -456,6 +518,9 @@ for i in range(len(df_nome)):
     tab_utente_mag = tab_utente.loc[tab_utente["Mese"] == 5]
     en_mag = tab_utente_mag["Valore"].sum() / 4
     p_mag = tab_utente_mag["Valore"].max()
+    if en_mag == 0.0:
+        en_mag = ''
+        p_mag = ''
     data_mag = {'a': [en_mag],
                 'b': [p_mag]}
     df_mag = pd.DataFrame(data_mag)
@@ -463,6 +528,9 @@ for i in range(len(df_nome)):
     tab_utente_giu = tab_utente.loc[tab_utente["Mese"] == 6]
     en_giu = tab_utente_giu["Valore"].sum() / 4
     p_giu = tab_utente_giu["Valore"].max()
+    if en_giu == 0.0:
+        en_giu = ''
+        p_giu = ''
     data_giu = {'a': [en_giu],
                 'b': [p_giu]}
     df_giu = pd.DataFrame(data_giu)
@@ -470,6 +538,9 @@ for i in range(len(df_nome)):
     tab_utente_lug = tab_utente.loc[tab_utente["Mese"] == 7]
     en_lug = tab_utente_lug["Valore"].sum() / 4
     p_lug = tab_utente_lug["Valore"].max()
+    if en_lug == 0.0:
+        en_lug = ''
+        p_lug = ''
     data_lug = {'a': [en_lug],
                 'b': [p_lug]}
     df_lug = pd.DataFrame(data_lug)
@@ -477,6 +548,9 @@ for i in range(len(df_nome)):
     tab_utente_ago = tab_utente.loc[tab_utente["Mese"] == 8]
     en_ago = tab_utente_ago["Valore"].sum() / 4
     p_ago = tab_utente_ago["Valore"].max()
+    if en_ago == 0.0:
+        en_ago = ''
+        p_ago = ''
     data_ago = {'a': [en_ago],
                 'b': [p_ago]}
     df_ago = pd.DataFrame(data_ago)
@@ -484,6 +558,9 @@ for i in range(len(df_nome)):
     tab_utente_set = tab_utente.loc[tab_utente["Mese"] == 9]
     en_set = tab_utente_set["Valore"].sum() / 4
     p_set = tab_utente_set["Valore"].max()
+    if en_set == 0.0:
+        en_set = ''
+        p_set = ''
     data_set = {'a': [en_set],
                 'b': [p_set]}
     df_set = pd.DataFrame(data_set)
@@ -491,6 +568,9 @@ for i in range(len(df_nome)):
     tab_utente_ott = tab_utente.loc[tab_utente["Mese"] == 10]
     en_ott = tab_utente_ott["Valore"].sum() / 4
     p_ott = tab_utente_ott["Valore"].max()
+    if en_ott == 0.0:
+        en_ott = ''
+        p_ott = ''
     data_ott = {'a': [en_ott],
                 'b': [p_ott]}
     df_ott = pd.DataFrame(data_ott)
@@ -498,6 +578,9 @@ for i in range(len(df_nome)):
     tab_utente_nov = tab_utente.loc[tab_utente["Mese"] == 11]
     en_nov = tab_utente_nov["Valore"].sum() / 4
     p_nov = tab_utente_nov["Valore"].max()
+    if en_nov == 0.0:
+        en_nov = ''
+        p_nov = ''
     data_nov = {'a': [en_nov],
                 'b': [p_nov]}
     df_nov = pd.DataFrame(data_nov)
@@ -505,6 +588,9 @@ for i in range(len(df_nome)):
     tab_utente_dic = tab_utente.loc[tab_utente["Mese"] == 12]
     en_dic = tab_utente_dic["Valore"].sum() / 4
     p_dic = tab_utente_dic["Valore"].max()
+    if en_dic == 0.0:
+        en_dic = ''
+        p_dic = ''
     data_dic = {'a': [en_dic],
                 'b': [p_dic]}
     df_dic = pd.DataFrame(data_dic)
@@ -656,8 +742,8 @@ for i in range(len(df_nome)):
 
     # -----------------------------------------------------------
     # ESPORTAZIONE DATI PANDAS -> EXCEL
-    data_mens_refill = {'a': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        'b': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+    data_mens_refill = {'a': ['', '', '', '', '', '', '', '', '', '', '', ''],
+                        'b': ['', '', '', '', '', '', '', '', '', '', '', '']}
     df_mens_refill = pd.DataFrame(data_mens_refill)
 
     df_mens_refill.to_excel(writer_a,
@@ -667,9 +753,10 @@ for i in range(len(df_nome)):
     # Dati per il foglio 1 in Excel
     df_tab_utente.to_excel(writer_a,
                            sheet_name='Dati cliente',
-                           startrow=5,
+                           startrow=6,
                            startcol=3,
-                           index=False)
+                           index=False,
+                           header=False)
 
     # Dati per il foglio 2 in Excel
     if not df_0.empty:
@@ -751,9 +838,9 @@ for i in range(len(df_nome)):
                              index=new_index,
                              columns=np.arange(len(df_refill_0.columns)))
 
-    writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
-    df_refill.to_excel(writer, 'Sheet1', header=False)
-    writer.save()
+    # writer = ExcelWriter("D:\RAPPORTO_MENSILE\RAPP_mensile\Tabella_oraria_sep.xlsx")
+    # df_refill.to_excel(writer, 'Sheet1', header=False)
+    # writer.save()
 
     # Tabella di 0 che pulisce le tabelle A+ e R+
     df_refill.to_excel(writer_a,
